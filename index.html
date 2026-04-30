@@ -152,7 +152,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 /* Header logo SVG — uses same scale tricks for bike/bowtie */
 #header-logo-svg img { display: block; width: 24px; height: 24px; object-fit: contain; }
 #header-logo-svg svg { display: block; width: 24px; height: 24px; }
-#header-logo-svg img.nav-bike, #header-logo-svg img.nav-bowtie { transform: scale(1.5); }
+#header-logo-svg { transform: translateY(-7px); }
+#header-logo-svg img.nav-bike, #header-logo-svg img.nav-bowtie { transform: scale(2); }
 /* Bottom nav: bump bike + bowtie raster icons (their viewBox has padding) */
 .nav-icon img.nav-bike, .nav-icon img.nav-bowtie { transform: scale(1.5); }
 .nav-icon svg .stroke { stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
