@@ -150,8 +150,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .nav-icon img.nav-head { border-radius: 50%; object-fit: cover; border: 1.5px solid currentColor; }
 /* Bump bike + bowtie raster icons (they have built-in padding in viewBox) */
 /* Header logo SVG — uses same scale tricks for bike/bowtie */
-#header-logo-svg img.nav-bike, #header-logo-svg img.nav-bowtie { transform: scale(1.5); transform-origin: center center; display: block; margin: auto; }
-#header-logo-svg svg { width: 100%; height: 100%; display: block; margin: auto; }
+#header-logo-svg img { display: block; }
+#header-logo-svg svg { display: block; }
 /* Bottom nav: bump bike + bowtie raster icons (their viewBox has padding) */
 .nav-icon img.nav-bike, .nav-icon img.nav-bowtie { transform: scale(1.5); }
 .nav-icon svg .stroke { stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -359,12 +359,15 @@ function svgIcon(name, cls='icon-yellow', size=20) {
   }
   return `<span class="${cls}" style="display:inline-flex;width:${size}px;height:${size}px;flex-shrink:0">${data}</span>`;
 }
-function iconMarkup(name, size=24) {
+function iconMarkup(name, size=24, proportional=false) {
   const data = ICONS[name]||'';
   if (data.startsWith('__IMG__')) {
     const uri = data.slice(7);
     const cls = name === 'bike' ? 'nav-bike' : name === 'bowtie' ? 'nav-bowtie' : '';
-    return `<img class="${cls}" src="${uri}" alt="" style="width:${size}px;height:${size}px;display:block;object-fit:contain">`;
+    const sz = proportional
+      ? `height:${size}px;width:auto`
+      : `width:${size}px;height:${size}px;object-fit:contain`;
+    return `<img class="${cls}" src="${uri}" alt="" style="${sz};display:block;">`;
   }
   if (name === 'head') {
     const headEl = document.getElementById('header-logo');
@@ -1151,7 +1154,7 @@ function switchTab(i) {
     if (logoSvg) logoSvg.style.display = 'none';
   } else {
     if (logoImg) logoImg.style.display = 'none';
-    if (logoSvg) { logoSvg.style.display = 'flex'; logoSvg.style.alignItems = 'center'; logoSvg.style.justifyContent = 'center'; logoSvg.style.alignSelf = 'center'; logoSvg.style.width='36px'; logoSvg.style.height='36px'; logoSvg.innerHTML = iconMarkup(TAB_ICONS[i], 36); }
+    if (logoSvg) { logoSvg.style.display = 'flex'; logoSvg.style.alignItems = 'center'; logoSvg.style.alignSelf = 'center'; logoSvg.style.width = 'auto'; logoSvg.style.height = 'auto'; logoSvg.innerHTML = iconMarkup(TAB_ICONS[i], 24, true); }
   }
   document.getElementById('main-scroll').scrollTop=0;
 }
