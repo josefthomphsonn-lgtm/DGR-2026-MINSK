@@ -150,8 +150,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .nav-icon img.nav-head { border-radius: 50%; object-fit: cover; border: 1.5px solid currentColor; }
 /* Bump bike + bowtie raster icons (they have built-in padding in viewBox) */
 /* Header logo SVG — uses same scale tricks for bike/bowtie */
-#header-logo-svg img.nav-bike, #header-logo-svg img.nav-bowtie { transform: scale(1.5); }
-#header-logo-svg svg { width: 100%; height: 100%; }
+#header-logo-svg img.nav-bike, #header-logo-svg img.nav-bowtie { transform: scale(1.5); transform-origin: center center; display: block; margin: auto; }
+#header-logo-svg svg { width: 100%; height: 100%; display: block; margin: auto; }
 /* Bottom nav: bump bike + bowtie raster icons (their viewBox has padding) */
 .nav-icon img.nav-bike, .nav-icon img.nav-bowtie { transform: scale(1.5); }
 .nav-icon svg .stroke { stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -1151,7 +1151,7 @@ function switchTab(i) {
     if (logoSvg) logoSvg.style.display = 'none';
   } else {
     if (logoImg) logoImg.style.display = 'none';
-    if (logoSvg) { logoSvg.style.display = 'inline-flex'; logoSvg.style.width='36px'; logoSvg.style.height='36px'; logoSvg.innerHTML = iconMarkup(TAB_ICONS[i], 36); }
+    if (logoSvg) { logoSvg.style.display = 'flex'; logoSvg.style.alignItems = 'center'; logoSvg.style.justifyContent = 'center'; logoSvg.style.alignSelf = 'center'; logoSvg.style.width='36px'; logoSvg.style.height='36px'; logoSvg.innerHTML = iconMarkup(TAB_ICONS[i], 36); }
   }
   document.getElementById('main-scroll').scrollTop=0;
 }
