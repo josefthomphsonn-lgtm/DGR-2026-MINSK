@@ -244,11 +244,20 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
     </div>
     <div class="modal-section active" id="auth-code">
       <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Войдите по email или персональному коду участника</p>
-      <input class="field" id="code-input" placeholder="Email или код доступа (DGR-001)" type="text" inputmode="email">
+      <input class="field" id="code-input" placeholder="Email или код доступа" type="text" inputmode="email">
       <div class="modal-err" id="code-err">Email или код не найден. Проверьте и попробуйте снова.</div>
-      <button class="modal-btn" onclick="loginWithCode()">ВОЙТИ</button>
+      <button class="modal-btn" onclick="loginWithCode()">ВОЙТИ КАК УЧАСТНИК</button>
       <div class="divider">или</div>
-      <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="loginAsGuest()">Продолжить без входа →</button>
+      <div style="display:flex;gap:10px">
+        <button class="modal-btn ghost" style="flex:1;font-size:12px" onclick="loginAsGuest()">👁 Гость</button>
+        <button class="modal-btn ghost" style="flex:1;font-size:12px;border-color:var(--gold);color:var(--gold)" onclick="showPhotographerForm()">📷 Фотограф</button>
+      </div>
+    </div>
+    <div class="modal-section" id="auth-photographer" style="display:none">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Введите имя или псевдоним — вы сможете загружать фото в галерею</p>
+      <input class="field" id="photographer-name" placeholder="Ваше имя / псевдоним" type="text">
+      <button class="modal-btn" style="background:var(--gold);color:var(--black)" onclick="loginAsPhotographer()">ПРОДОЛЖИТЬ КАК ФОТОГРАФ</button>
+      <button class="modal-btn ghost" style="font-size:11px;padding:9px;margin-top:4px" onclick="hidePhotographerForm()">← Назад</button>
     </div>
   </div>
 
@@ -278,8 +287,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
   <div class="modal-sheet">
     <div class="modal-title">Войти</div>
     <div class="modal-sub" id="auth-modal-reason">Для этого действия нужно войти</div>
-    <input class="field" id="modal-code" placeholder="Код участника">
-    <div class="modal-err" id="modal-err">Код не найден</div>
+    <input class="field" id="modal-code" placeholder="Email или код доступа" inputmode="email">
+    <div class="modal-err" id="modal-err">Email или код не найден</div>
     <button class="modal-btn" onclick="modalLogin()">ВОЙТИ</button>
     <button class="modal-btn ghost" onclick="closeAuthModal()">Отмена</button>
   </div>
@@ -306,7 +315,19 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
     <div class="choice-title" id="choice-title">Загрузить фото</div>
     <button class="choice-btn" onclick="choiceUpload()"><span class="choice-icon">📷</span><div><div>Загрузить с устройства</div><div style="font-size:10px;color:var(--muted);font-weight:400;margin-top:2px" id="choice-upload-note">Выбрать файл</div></div></button>
     <button class="choice-btn" id="choice-gallery-btn" onclick="choiceFromGallery()"><span class="choice-icon">🖼</span><div><div>Выбрать из галереи</div><div style="font-size:10px;color:var(--muted);font-weight:400;margin-top:2px">Использовать загруженное фото</div></div></button>
+    <button class="choice-btn" id="choice-link-btn" onclick="choiceByLink()" style="display:none"><span class="choice-icon">🔗</span><div><div>Добавить по ссылке</div><div style="font-size:10px;color:var(--muted);font-weight:400;margin-top:2px">Вставить URL фото</div></div></button>
     <button class="choice-cancel" onclick="closeUploadChoice()">Отмена</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="photo-link-modal">
+  <div class="modal-sheet">
+    <div class="modal-title">Добавить по ссылке</div>
+    <div class="modal-sub">Вставьте прямую ссылку на фото (jpg, png, webp)</div>
+    <input class="field" id="photo-link-input" placeholder="https://example.com/photo.jpg" type="url">
+    <div class="modal-err" id="photo-link-err">Некорректная ссылка</div>
+    <button class="modal-btn" onclick="submitPhotoLink()">ДОБАВИТЬ</button>
+    <button class="modal-btn ghost" onclick="document.getElementById('photo-link-modal').classList.remove('open')">Отмена</button>
   </div>
 </div>
 
@@ -563,6 +584,43 @@ function loginAsGuest() {
   loadData().then(showApp);
 }
 
+function showPhotographerForm() {
+  document.getElementById('auth-code').style.display = 'none';
+  document.getElementById('auth-photographer').style.display = 'block';
+  document.getElementById('photographer-name').focus();
+}
+function hidePhotographerForm() {
+  document.getElementById('auth-photographer').style.display = 'none';
+  document.getElementById('auth-code').style.display = 'block';
+}
+function loginAsPhotographer() {
+  const name = document.getElementById('photographer-name').value.trim();
+  if (!name) { document.getElementById('photographer-name').focus(); return; }
+  currentUser = { name, row:0, isGuest:false, isPhotographer:true, data:null };
+  localStorage.setItem('dgr_user', JSON.stringify(currentUser));
+  loadData().then(showApp);
+}
+
+function choiceByLink() {
+  closeUploadChoice();
+  document.getElementById('photo-link-input').value = '';
+  document.getElementById('photo-link-err').style.display = 'none';
+  document.getElementById('photo-link-modal').classList.add('open');
+}
+
+async function submitPhotoLink() {
+  const url = document.getElementById('photo-link-input').value.trim();
+  if (!url || !url.startsWith('http')) { document.getElementById('photo-link-err').style.display='block'; return; }
+  document.getElementById('photo-link-modal').classList.remove('open');
+  showLoad(true);
+  try {
+    await apiPost({action:'addGalleryPhoto', owner_row_id: currentUser.row||0, owner_name: currentUser.name, photo_url: url, type:'gallery'});
+    toast('Фото добавлено в галерею!');
+    await loadData(); renderGallery();
+  } catch(e) { toast('Ошибка. Проверьте ссылку.'); }
+  showLoad(false);
+}
+
 async function modalLogin() {
   const code = document.getElementById('modal-code').value.trim();
   if (!code) return;
@@ -595,7 +653,11 @@ function updateUserDisplay() {
   const el = document.getElementById('user-display');
   const notifBtn = document.getElementById('notif-btn');
   if (!currentUser || currentUser.isGuest) {
-    el.innerHTML = `<button class="login-btn" onclick="openAuthModal('Введите код участника')">Войти</button>`;
+    el.innerHTML = `<button class="login-btn" onclick="openAuthModal('Войдите как участник')">Войти</button>`;
+    if (notifBtn) notifBtn.style.display = 'none';
+  } else if (currentUser.isPhotographer) {
+    const initials = currentUser.name.substring(0,2).toUpperCase();
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:8px"><button class="user-btn" style="background:var(--gold);color:var(--black);font-size:11px;font-weight:900">${initials}</button><span style="font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.5px">📷<br>${currentUser.name.split(' ')[0]}</span></div>`;
     if (notifBtn) notifBtn.style.display = 'none';
   } else if (isAdmin()) {
     el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="openAdminPanel()"><button class="user-btn" style="background:#e53935;font-size:16px">👑</button><span style="font-size:11px;color:#e53935;font-weight:700;letter-spacing:.5px">АДМИН</span></div>`;
@@ -758,11 +820,14 @@ function renderGallery() {
   const el = document.getElementById('gallery-view');
   const _gLimit = currentUser && currentUser.data ? parseInt(currentUser.data['photo_limit']) || 0 : 0;
   const _gCount = currentUser ? gallery.filter(ph => String(ph.owner_row_id) === String(currentUser.row)).length : 0;
-  const canUpload = currentUser && !currentUser.isGuest && (_gLimit === 0 || _gCount < _gLimit);
+  const _canUploadUser = currentUser && !currentUser.isGuest;
+  const _limitOk = _gLimit === 0 || _gCount < _gLimit;
+  const canUpload = _canUploadUser && _limitOk;
   const _limitNote = _gLimit > 0 ? ` (${_gCount}/${_gLimit})` : '';
+  const _isPhotographer = currentUser && currentUser.isPhotographer;
   const uploadBtn = canUpload
     ? `<div class="gallery-upload-btn" onclick="startUpload('gallery_general')">📷 Загрузить фото в галерею${_limitNote}</div>`
-    : currentUser && !currentUser.isGuest && _gLimit > 0 && _gCount >= _gLimit
+    : _canUploadUser && !_limitOk
       ? `<div class="gallery-upload-btn" style="opacity:.5;cursor:default">📷 Лимит загрузки достигнут (${_gCount}/${_gLimit})</div>`
       : `<div class="gallery-upload-btn" onclick="openAuthModal('Войдите чтобы загружать фото')">📷 Войдите чтобы загружать фото</div>`;
   const galleryTitle = '';
@@ -898,7 +963,8 @@ function closeDetail() { document.getElementById('detail-view').style.display='n
 // UPLOAD
 function startUpload(type, fromTab) {
   if (!currentUser) { openAuthModal('Войдите чтобы загружать фото'); return; }
-  if (currentUser.isGuest) { openAuthModal('Только участники могут загружать фото'); return; }
+  if (currentUser.isGuest) { openAuthModal('Войдите как участник или фотограф чтобы загружать фото'); return; }
+  if (currentUser.isPhotographer && type !== 'gallery_general') { toast('Фотографы могут загружать только в общую галерею'); return; }
   if (type === 'gallery_general' && !isAdmin()) {
     const lim = parseInt(currentUser.data && currentUser.data['photo_limit']) || 0;
     if (lim > 0) {
@@ -910,6 +976,7 @@ function startUpload(type, fromTab) {
   const titles = { live_photo:'Живое фото байка', portrait:'Фото профиля', contest_bike:'Фото для ТОП Байк', contest_style:'Фото для ТОП Стиль', personal_gallery:'Фото в галерею', gallery_general:'Фото в общую галерею' };
   document.getElementById('choice-title').textContent = titles[type]||'Загрузить фото';
   document.getElementById('choice-gallery-btn').style.display = ['contest_bike','contest_style','personal_gallery'].includes(type)?'flex':'none';
+  document.getElementById('choice-link-btn').style.display = type==='gallery_general'?'flex':'none';
   const note = document.getElementById('choice-upload-note');
   if (note) note.textContent = type==='personal_gallery' ? '⚠️ Фото также появится в общей галерее' : 'Выбрать файл с устройства';
   document.getElementById('upload-choice').classList.add('open');
@@ -1185,6 +1252,7 @@ async function saveEmail() {
 }
 
 document.getElementById('email-modal')?.addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.classList.remove('open'); });
+document.getElementById('photo-link-modal')?.addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.classList.remove('open'); });
 
 
 // ── ADMIN ──
