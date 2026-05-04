@@ -289,8 +289,17 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
     <div class="modal-sub" id="auth-modal-reason">Для этого действия нужно войти</div>
     <input class="field" id="modal-code" placeholder="Email или код доступа" inputmode="email">
     <div class="modal-err" id="modal-err">Email или код не найден</div>
-    <button class="modal-btn" onclick="modalLogin()">ВОЙТИ</button>
-    <button class="modal-btn ghost" onclick="closeAuthModal()">Отмена</button>
+    <button class="modal-btn" onclick="modalLogin()">ВОЙТИ КАК УЧАСТНИК</button>
+    <div class="divider">или</div>
+    <div id="modal-photo-toggle">
+      <button class="modal-btn ghost" style="font-size:12px;width:100%" onclick="document.getElementById('modal-photographer-form').style.display='block';document.getElementById('modal-photo-toggle').style.display='none'">📷 Войти как фотограф</button>
+    </div>
+    <div id="modal-photographer-form" style="display:none">
+      <input class="field" id="modal-photographer-name" placeholder="Ваше имя / псевдоним" style="margin-top:0">
+      <button class="modal-btn" style="background:var(--gold);color:var(--black)" onclick="modalLoginAsPhotographer()">ПРОДОЛЖИТЬ КАК ФОТОГРАФ</button>
+      <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="document.getElementById('modal-photographer-form').style.display='none';document.getElementById('modal-photo-toggle').style.display='block'">← Назад</button>
+    </div>
+    <button class="modal-btn ghost" onclick="closeAuthModal()" style="margin-top:4px">Отмена</button>
   </div>
 </div>
 
@@ -478,9 +487,11 @@ function showApp() {
 function renderAll() { renderMembers(); renderTopBike(); renderTopStyle(); renderGallery(); renderEvent(); }
 
 // EVENT PAGE
+const HISTORIA_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" style="width:44px;height:44px;display:block"><rect width="44" height="44" fill="#0d0d14" rx="7"/><rect x="8" y="8" width="8" height="28" fill="white"/><rect x="28" y="8" width="8" height="28" fill="white"/><rect x="16" y="17" width="12" height="10" fill="white"/></svg>`;
+const SOS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" style="width:44px;height:44px;display:block"><rect width="44" height="44" fill="#e8f4fb" rx="7"/><text x="22" y="18" text-anchor="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="11" fill="#009fd4">SOS</text><text x="22" y="27" text-anchor="middle" font-family="Arial,sans-serif" font-size="5.5" font-weight="700" fill="#009fd4">ДЕТСКИЕ</text><text x="22" y="33" text-anchor="middle" font-family="Arial,sans-serif" font-size="5.5" font-weight="700" fill="#009fd4">ДЕРЕВНИ</text><text x="22" y="39" text-anchor="middle" font-family="Arial,sans-serif" font-size="4.5" font-weight="700" fill="#009fd4">БЕЛАРУСЬ</text></svg>`;
 const DEFAULT_PARTNERS = [
-  { name: 'СОС Детские Деревни', url: 'https://sos-cd.by/', desc: 'Благотворительный партнёр — помощь детям', icon: '❤️' },
-  { name: 'Akcent for Men', url: 'https://akcent-for-men.by/', desc: 'Магазин мужской одежды', icon: '👔' }
+  { name: 'SOS Детские Деревни Беларусь', url: 'https://sos-villages.by/', desc: 'Благотворительный партнёр — помощь детям', iconSvg: SOS_SVG, iconBg: '#e8f4fb' },
+  { name: 'HISTORIA', url: 'https://www.historia-shop.by/', desc: 'Дизайнерская одежда', iconSvg: HISTORIA_SVG, iconBg: '#0d0d14', nameStyle: "font-family:'Georgia',serif;letter-spacing:2px" }
 ];
 
 function getPartners() {
@@ -519,17 +530,20 @@ function renderEvent() {
       ${canEdit ? `<button onclick="openAddPartner()" style="background:var(--gold);color:var(--black);border:none;border-radius:8px;padding:6px 10px;font-weight:700;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif">+ Добавить</button>` : ''}
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
-      ${partners.map((p, i) => `
-        <a href="${p.url}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;text-decoration:none;color:var(--text);transition:border-color .15s" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
-          <div style="width:44px;height:44px;border-radius:10px;background:var(--gold-glow);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${p.icon || '🤝'}</div>
+      ${partners.map((p, i) => {
+        const iconEl = p.iconSvg
+          ? `<div style="width:44px;height:44px;border-radius:10px;overflow:hidden;flex-shrink:0;background:${p.iconBg||'var(--card)'}">${p.iconSvg}</div>`
+          : `<div style="width:44px;height:44px;border-radius:10px;background:var(--gold-glow);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${p.icon || '🤝'}</div>`;
+        return `<a href="${p.url}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;text-decoration:none;color:var(--text);transition:border-color .15s" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+          ${iconEl}
           <div style="flex:1;min-width:0">
-            <div style="font-weight:700;font-size:14px;color:var(--gold)">${p.name}</div>
+            <div style="font-weight:700;font-size:14px;color:var(--gold);${p.nameStyle||''}">${p.name}</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.desc || p.url.replace(/^https?:\/\//,'')}</div>
           </div>
           <span style="color:var(--gold);font-size:18px;flex-shrink:0">→</span>
           ${canEdit ? `<button onclick="event.preventDefault();event.stopPropagation();removePartner(${i})" style="background:none;border:none;color:#e53935;font-size:14px;cursor:pointer;padding:4px 6px" title="Удалить">✕</button>` : ''}
-        </a>
-      `).join('')}
+        </a>`;
+      }).join('')}
     </div>
 
     ${!canEdit ? `<div style="text-align:center;font-size:11px;color:var(--muted);margin-top:18px;padding:0 20px;line-height:1.5">Хотите стать партнёром? Свяжитесь с организаторами мероприятия.</div>` : `<button onclick="openAddPartner()" style="width:100%;background:transparent;border:1.5px dashed var(--border);color:var(--muted);border-radius:12px;padding:14px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-top:12px">+ Добавить партнёра</button>`}
@@ -636,9 +650,19 @@ async function modalLogin() {
 
 function openAuthModal(reason) {
   document.getElementById('auth-modal-reason').textContent = reason||'';
+  document.getElementById('modal-err').style.display='none';
+  document.getElementById('modal-photographer-form').style.display='none';
+  document.getElementById('modal-photo-toggle').style.display='block';
   document.getElementById('auth-modal').classList.add('open');
 }
 function closeAuthModal() { document.getElementById('auth-modal').classList.remove('open'); }
+function modalLoginAsPhotographer() {
+  const name = document.getElementById('modal-photographer-name').value.trim();
+  if (!name) { document.getElementById('modal-photographer-name').focus(); return; }
+  currentUser = { name, row:0, isGuest:false, isPhotographer:true, data:null };
+  localStorage.setItem('dgr_user', JSON.stringify(currentUser));
+  closeAuthModal(); loadData().then(() => { updateUserDisplay(); renderAll(); toast('Добро пожаловать, ' + name + '!'); });
+}
 
 function logout() {
   document.getElementById('logout-modal').classList.add('open');
