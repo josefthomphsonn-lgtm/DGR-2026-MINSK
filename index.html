@@ -241,20 +241,14 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
       <div style="font-size:12px;color:var(--muted);margin-top:6px;letter-spacing:2px;text-transform:uppercase">Минск</div>
     </div>
     <div class="modal-tabs">
-      <div class="modal-tab active" onclick="switchAuthTab('code')" id="at-code">Участник</div>
-      <div class="modal-tab" onclick="switchAuthTab('guest')" id="at-guest">Гость</div>
     </div>
     <div class="modal-section active" id="auth-code">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Введите ваш персональный код или привязанный email</p>
-      <input class="field" id="code-input" placeholder="Код (DGR-001) или email" type="text">
-      <div class="modal-err" id="code-err">Код или email не найден. Проверьте и попробуйте снова.</div>
-      <button class="modal-btn" onclick="loginWithCode()">ВОЙТИ КАК УЧАСТНИК</button>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Войдите по email или персональному коду участника</p>
+      <input class="field" id="code-input" placeholder="Email или код доступа (DGR-001)" type="text" inputmode="email">
+      <div class="modal-err" id="code-err">Email или код не найден. Проверьте и попробуйте снова.</div>
+      <button class="modal-btn" onclick="loginWithCode()">ВОЙТИ</button>
       <div class="divider">или</div>
-      <button class="modal-btn ghost" onclick="loginAsGuest()">Продолжить как гость</button>
-    </div>
-    <div class="modal-section" id="auth-guest">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Гости могут просматривать всё и загружать фото в галерею</p>
-      <button class="modal-btn" onclick="loginAsGuest()">ПРОДОЛЖИТЬ КАК ГОСТЬ</button>
+      <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="loginAsGuest()">Продолжить без входа →</button>
     </div>
   </div>
 
@@ -556,9 +550,8 @@ function removePartner(i) {
 
 // AUTH
 function switchAuthTab(t) {
-  ['code','guest'].forEach(x => {
-    document.getElementById('at-'+x).classList.toggle('active', x===t);
-    document.getElementById('auth-'+x).classList.toggle('active', x===t);
+  ['code'].forEach(x => {
+    document.getElementById('auth-'+x)?.classList.toggle('active', x===t);
   });
 }
 
@@ -763,10 +756,15 @@ let gallerySortBy = 'new'; // 'new' | 'likes' | 'comments'
 
 function renderGallery() {
   const el = document.getElementById('gallery-view');
-  const canUpload = !!currentUser;
+  const _gLimit = currentUser && currentUser.data ? parseInt(currentUser.data['photo_limit']) || 0 : 0;
+  const _gCount = currentUser ? gallery.filter(ph => String(ph.owner_row_id) === String(currentUser.row)).length : 0;
+  const canUpload = currentUser && !currentUser.isGuest && (_gLimit === 0 || _gCount < _gLimit);
+  const _limitNote = _gLimit > 0 ? ` (${_gCount}/${_gLimit})` : '';
   const uploadBtn = canUpload
-    ? `<div class="gallery-upload-btn" onclick="startUpload('gallery_general')">📷 Загрузить фото в галерею</div>`
-    : `<div class="gallery-upload-btn" onclick="openAuthModal('Войдите чтобы загружать фото')">📷 Войдите чтобы загружать фото</div>`;
+    ? `<div class="gallery-upload-btn" onclick="startUpload('gallery_general')">📷 Загрузить фото в галерею${_limitNote}</div>`
+    : currentUser && !currentUser.isGuest && _gLimit > 0 && _gCount >= _gLimit
+      ? `<div class="gallery-upload-btn" style="opacity:.5;cursor:default">📷 Лимит загрузки достигнут (${_gCount}/${_gLimit})</div>`
+      : `<div class="gallery-upload-btn" onclick="openAuthModal('Войдите чтобы загружать фото')">📷 Войдите чтобы загружать фото</div>`;
   const galleryTitle = '';
   if (!gallery.length) { el.innerHTML=galleryTitle+uploadBtn+'<div class="empty">Галерея пуста</div>'; return; }
 
@@ -900,7 +898,14 @@ function closeDetail() { document.getElementById('detail-view').style.display='n
 // UPLOAD
 function startUpload(type, fromTab) {
   if (!currentUser) { openAuthModal('Войдите чтобы загружать фото'); return; }
-  if (currentUser.isGuest && type!=='gallery_general') { openAuthModal('Только участники могут редактировать профиль'); return; }
+  if (currentUser.isGuest) { openAuthModal('Только участники могут загружать фото'); return; }
+  if (type === 'gallery_general' && !isAdmin()) {
+    const lim = parseInt(currentUser.data && currentUser.data['photo_limit']) || 0;
+    if (lim > 0) {
+      const cnt = gallery.filter(ph => String(ph.owner_row_id) === String(currentUser.row)).length;
+      if (cnt >= lim) { toast(`Достигнут лимит загрузки: ${lim} фото`); return; }
+    }
+  }
   uploadCtx = {type, fromTab: fromTab || null};
   const titles = { live_photo:'Живое фото байка', portrait:'Фото профиля', contest_bike:'Фото для ТОП Байк', contest_style:'Фото для ТОП Стиль', personal_gallery:'Фото в галерею', gallery_general:'Фото в общую галерею' };
   document.getElementById('choice-title').textContent = titles[type]||'Загрузить фото';
@@ -984,12 +989,7 @@ async function savePhoto(url) {
   console.log('savePhoto type:', type, 'url:', url, 'row:', currentUser?.row);
 
   if (type==='gallery_general') {
-    if (currentUser.isGuest) {
-      const gp = JSON.parse(localStorage.getItem('guest_photos')||'[]');
-      if (gp.length >= 20) { toast('Лимит 20 фото для гостя исчерпан'); showUploadProgress(false); return; }
-    }
-    const res = await apiPost({action:'addGalleryPhoto', owner_row_id:currentUser.isGuest?0:currentUser.row, owner_name:currentUser.name, photo_url:url, type:'gallery'});
-    if (currentUser.isGuest) { const gp=JSON.parse(localStorage.getItem('guest_photos')||'[]'); gp.push(url); localStorage.setItem('guest_photos',JSON.stringify(gp)); }
+    const res = await apiPost({action:'addGalleryPhoto', owner_row_id:currentUser.row, owner_name:currentUser.name, photo_url:url, type:'gallery'});
     console.log('addGalleryPhoto result:', JSON.stringify(res));
     toast('Фото добавлено в галерею!'); 
     await loadData(); 
@@ -1226,10 +1226,11 @@ function openAdminPanel() {
 function openAdminEdit(row) {
   const p = participants.find(x=>x._row==row); if (!p) return;
   adminEditRow = row; adminEditData = p;
-  const fields = ['ФИО','МОТОЦИКЛ','ЗАВОДСКОЕ ФОТО','ЖИВОЕ ФОТО БАЙКА','фото СТАЛЬНАЯ КЛАССИКА лучший байк','фото ИКОНА СТИЛЯ лучший образ','portrait_photo','access_code','email','votes_bike','votes_style'];
+  const fields = ['ФИО','МОТОЦИКЛ','ЗАВОДСКОЕ ФОТО','ЖИВОЕ ФОТО БАЙКА','фото СТАЛЬНАЯ КЛАССИКА лучший байк','фото ИКОНА СТИЛЯ лучший образ','portrait_photo','access_code','email','votes_bike','votes_style','photo_limit'];
+  const fieldHints = { photo_limit: '0 = без ограничений' };
   document.getElementById('admin-edit-body').innerHTML = fields.map(f => `
     <div style="margin-bottom:10px">
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">${f}</div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">${f}${fieldHints[f]?` <span style="text-transform:none;letter-spacing:0">(${fieldHints[f]})</span>`:''}</div>
       <input class="field" style="margin-bottom:0" id="admin-field-${f.replace(/[^a-zA-Zа-яА-Я0-9]/g,'_')}" value="${p[f]||''}" placeholder="${f}">
     </div>`).join('') +
     `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
@@ -1242,7 +1243,7 @@ function openAdminEdit(row) {
 }
 
 async function adminSaveEdit() {
-  const fields = ['ФИО','МОТОЦИКЛ','ЗАВОДСКОЕ ФОТО','ЖИВОЕ ФОТО БАЙКА','фото СТАЛЬНАЯ КЛАССИКА лучший байк','фото ИКОНА СТИЛЯ лучший образ','portrait_photo','access_code','email','votes_bike','votes_style'];
+  const fields = ['ФИО','МОТОЦИКЛ','ЗАВОДСКОЕ ФОТО','ЖИВОЕ ФОТО БАЙКА','фото СТАЛЬНАЯ КЛАССИКА лучший байк','фото ИКОНА СТИЛЯ лучший образ','portrait_photo','access_code','email','votes_bike','votes_style','photo_limit'];
   const updated = {};
   fields.forEach(f => {
     const el = document.getElementById('admin-field-'+f.replace(/[^a-zA-Zа-яА-Я0-9]/g,'_'));
@@ -1256,10 +1257,54 @@ async function adminSaveEdit() {
 }
 
 async function adminDeletePhoto(type) {
-  if (!confirm('Удалить фото?')) return;
   const fm = { contest_bike:'фото СТАЛЬНАЯ КЛАССИКА лучший байк', contest_style:'фото ИКОНА СТИЛЯ лучший образ', live:'ЖИВОЕ ФОТО БАЙКА' };
+  showLoad(true);
   await apiPost({action:'updateParticipant', row:adminEditRow, fields:{[fm[type]]:''}});
-  toast('Фото удалено'); openAdminEdit(adminEditRow); await loadData(); renderAll();
+  toast('Фото удалено'); openAdminEdit(adminEditRow); await loadData(); renderAll(); showLoad(false);
+}
+
+function adminSwitchTab(t) {
+  ['p','g'].forEach(x => {
+    document.getElementById('admin-section-'+x).style.display = x===t ? 'block' : 'none';
+    const btn = document.getElementById('admin-tab-'+x);
+    btn.style.borderBottomColor = x===t ? '#e53935' : 'transparent';
+    btn.style.color = x===t ? '#e53935' : 'var(--muted)';
+  });
+  if (t === 'g') renderAdminGallery();
+}
+
+function renderAdminGallery() {
+  const el = document.getElementById('admin-gallery-list');
+  if (!el) return;
+  if (!gallery.length) { el.innerHTML = '<div class="empty">Фото нет</div>'; return; }
+  const sorted = [...gallery].sort((a,b) => new Date(b.uploaded_at||0)-new Date(a.uploaded_at||0));
+  el.innerHTML = sorted.map(ph => {
+    const owner = ph.owner_name || 'Гость';
+    const date = ph.uploaded_at ? new Date(ph.uploaded_at).toLocaleDateString('ru-RU') : '';
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:8px;display:flex;gap:10px;align-items:center">
+      <img src="${ph.photo_url}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:8px;flex-shrink:0">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${owner}</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">${date}</div>
+      </div>
+      <button onclick="adminConfirmDeleteGallery(${ph._row})" style="background:none;border:1px solid #e53935;color:#e53935;border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;flex-shrink:0">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+let _adminDelGalleryRow = null;
+function adminConfirmDeleteGallery(row) {
+  _adminDelGalleryRow = row;
+  document.getElementById('admin-del-gallery-modal').classList.add('open');
+}
+async function adminDeleteGalleryConfirmed() {
+  document.getElementById('admin-del-gallery-modal').classList.remove('open');
+  if (!_adminDelGalleryRow) return;
+  showLoad(true);
+  await apiPost({action:'deleteGalleryPhoto', row:_adminDelGalleryRow});
+  toast('Фото удалено');
+  await loadData(); renderAdminGallery(); renderAll();
+  showLoad(false);
 }
 
 document.getElementById('admin-edit-modal')?.addEventListener('click', e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
@@ -1610,13 +1655,31 @@ document.getElementById('style-picker-modal').addEventListener('click',e=>{if(e.
 
 <!-- ADMIN PANEL -->
 <div id="admin-panel" style="display:none;position:fixed;inset:0;background:var(--black);z-index:300;overflow-y:auto;max-width:480px;margin:0 auto;padding-bottom:40px">
-  <div style="position:sticky;top:0;background:rgba(8,8,8,.97);padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;z-index:10">
-    <button onclick="document.getElementById('admin-panel').style.display='none'" style="background:none;border:none;color:#e53935;font-size:24px;cursor:pointer;line-height:1">←</button>
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:#e53935">👑 ПАНЕЛЬ АДМИНА</div>
+  <div style="position:sticky;top:0;background:rgba(8,8,8,.97);border-bottom:1px solid var(--border);z-index:10">
+    <div style="padding:12px 16px;display:flex;align-items:center;gap:10px">
+      <button onclick="document.getElementById('admin-panel').style.display='none'" style="background:none;border:none;color:#e53935;font-size:24px;cursor:pointer;line-height:1">←</button>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:#e53935">👑 ПАНЕЛЬ АДМИНА</div>
+    </div>
+    <div style="display:flex">
+      <button id="admin-tab-p" onclick="adminSwitchTab('p')" style="flex:1;padding:10px;background:none;border:none;border-bottom:2px solid #e53935;color:#e53935;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">Участники</button>
+      <button id="admin-tab-g" onclick="adminSwitchTab('g')" style="flex:1;padding:10px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">Галерея</button>
+    </div>
   </div>
-  <div style="padding:14px">
-    <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700;margin-bottom:10px">Участники</div>
+  <div id="admin-section-p" style="padding:14px">
     <div id="admin-participants-list"></div>
+  </div>
+  <div id="admin-section-g" style="padding:14px;display:none">
+    <div id="admin-gallery-list"></div>
+  </div>
+</div>
+
+<!-- ADMIN DELETE GALLERY CONFIRM MODAL -->
+<div class="modal-overlay" id="admin-del-gallery-modal">
+  <div class="modal-sheet">
+    <div class="modal-title" style="color:#e53935">Удалить фото?</div>
+    <div class="modal-sub">Это действие нельзя отменить.</div>
+    <button class="modal-btn" style="background:#e53935" onclick="adminDeleteGalleryConfirmed()">УДАЛИТЬ</button>
+    <button class="modal-btn ghost" onclick="document.getElementById('admin-del-gallery-modal').classList.remove('open')">Отмена</button>
   </div>
 </div>
 
