@@ -252,12 +252,33 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
         <button class="modal-btn ghost" style="flex:1;font-size:12px" onclick="loginAsGuest()">👁 Гость</button>
         <button class="modal-btn ghost" style="flex:1;font-size:12px;border-color:var(--gold);color:var(--gold)" onclick="showPhotographerForm()">📷 Фотограф</button>
       </div>
+      <div style="text-align:center;margin-top:12px;font-size:10px;color:var(--border)">Для входа администратора введите код доступа выше</div>
     </div>
     <div class="modal-section" id="auth-photographer" style="display:none">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Введите имя или псевдоним — вы сможете загружать фото в галерею</p>
-      <input class="field" id="photographer-name" placeholder="Ваше имя / псевдоним" type="text">
-      <button class="modal-btn" style="background:var(--gold);color:var(--black)" onclick="loginAsPhotographer()">ПРОДОЛЖИТЬ КАК ФОТОГРАФ</button>
-      <button class="modal-btn ghost" style="font-size:11px;padding:9px;margin-top:4px" onclick="hidePhotographerForm()">← Назад</button>
+      <!-- Default: two options -->
+      <div id="auth-photo-choice">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Войдите или подайте заявку для загрузки фото в галерею</p>
+        <button class="modal-btn" style="background:var(--gold);color:var(--black)" onclick="showPhotoRegister()">📝 Подать заявку</button>
+        <button class="modal-btn ghost" style="margin-top:8px" onclick="showPhotoLogin()">🔑 Уже одобрен — войти</button>
+        <button class="modal-btn ghost" style="font-size:11px;padding:9px;margin-top:4px" onclick="hidePhotographerForm()">← Назад</button>
+      </div>
+      <!-- Registration form -->
+      <div id="auth-photo-register" style="display:none">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Расскажите о себе — администратор рассмотрит заявку</p>
+        <input class="field" id="photo-reg-name" placeholder="Имя / псевдоним" type="text">
+        <input class="field" id="photo-reg-email" placeholder="Email для уведомления" type="email">
+        <textarea class="field" id="photo-reg-motive" placeholder="Кто вы и почему хотите снимать для DGR?" style="height:80px;resize:none;font-family:'Inter',sans-serif;font-size:13px"></textarea>
+        <button class="modal-btn" style="background:var(--gold);color:var(--black)" onclick="submitPhotographerRequest()">ОТПРАВИТЬ ЗАЯВКУ</button>
+        <button class="modal-btn ghost" style="font-size:11px;padding:9px;margin-top:4px" onclick="showPhotoChoice()">← Назад</button>
+      </div>
+      <!-- Approved login form -->
+      <div id="auth-photo-login" style="display:none">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Введите email, который был одобрен администратором</p>
+        <input class="field" id="photo-login-email" placeholder="Email фотографа" type="email">
+        <div class="modal-err" id="photo-login-err">Email не найден в списке одобренных</div>
+        <button class="modal-btn" style="background:var(--gold);color:var(--black)" onclick="loginAsApprovedPhotographer()">ВОЙТИ</button>
+        <button class="modal-btn ghost" style="font-size:11px;padding:9px;margin-top:4px" onclick="showPhotoChoice()">← Назад</button>
+      </div>
     </div>
   </div>
 
@@ -601,18 +622,90 @@ function loginAsGuest() {
 function showPhotographerForm() {
   document.getElementById('auth-code').style.display = 'none';
   document.getElementById('auth-photographer').style.display = 'block';
-  document.getElementById('photographer-name').focus();
+  showPhotoChoice();
 }
 function hidePhotographerForm() {
   document.getElementById('auth-photographer').style.display = 'none';
   document.getElementById('auth-code').style.display = 'block';
 }
-function loginAsPhotographer() {
-  const name = document.getElementById('photographer-name').value.trim();
-  if (!name) { document.getElementById('photographer-name').focus(); return; }
-  currentUser = { name, row:0, isGuest:false, isPhotographer:true, data:null };
-  localStorage.setItem('dgr_user', JSON.stringify(currentUser));
-  loadData().then(showApp);
+function showPhotoChoice() {
+  document.getElementById('auth-photo-choice').style.display = 'block';
+  document.getElementById('auth-photo-register').style.display = 'none';
+  document.getElementById('auth-photo-login').style.display = 'none';
+}
+function showPhotoRegister() {
+  document.getElementById('auth-photo-choice').style.display = 'none';
+  document.getElementById('auth-photo-register').style.display = 'block';
+}
+function showPhotoLogin() {
+  document.getElementById('auth-photo-choice').style.display = 'none';
+  document.getElementById('auth-photo-login').style.display = 'block';
+  document.getElementById('photo-login-err').style.display = 'none';
+}
+function submitPhotographerRequest() {
+  const name = document.getElementById('photo-reg-name').value.trim();
+  const email = document.getElementById('photo-reg-email').value.trim();
+  const motivation = document.getElementById('photo-reg-motive').value.trim();
+  if (!name || !email || !motivation) { toast('Заполните все поля'); return; }
+  const requests = JSON.parse(localStorage.getItem('dgr_photographer_requests') || '[]');
+  if (requests.find(r => r.email === email)) { toast('Заявка от этого email уже подана'); return; }
+  requests.push({ name, email, motivation, date: new Date().toISOString() });
+  localStorage.setItem('dgr_photographer_requests', JSON.stringify(requests));
+  // Try API (backend may not support yet)
+  apiPost({ action: 'registerPhotographer', name, email, motivation }).catch(() => {});
+  document.getElementById('auth-photo-register').innerHTML = `
+    <div style="text-align:center;padding:20px 0">
+      <div style="font-size:32px;margin-bottom:12px">✅</div>
+      <div style="font-weight:700;font-size:16px;color:var(--gold);margin-bottom:8px">Заявка отправлена!</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.5">Администратор рассмотрит вашу заявку и свяжется по адресу <strong>${email}</strong></div>
+    </div>
+    <button class="modal-btn ghost" style="margin-top:16px" onclick="hidePhotographerForm()">Закрыть</button>
+  `;
+}
+function loginAsApprovedPhotographer() {
+  const email = document.getElementById('photo-login-email').value.trim().toLowerCase();
+  if (!email) return;
+  const approved = JSON.parse(localStorage.getItem('dgr_approved_photographers') || '[]');
+  const rec = approved.find(r => r.email.toLowerCase() === email);
+  if (rec) {
+    currentUser = { name: rec.name, email: rec.email, row: 0, isGuest: false, isPhotographer: true, data: null };
+    localStorage.setItem('dgr_user', JSON.stringify(currentUser));
+    loadData().then(showApp);
+  } else {
+    // Try API
+    apiPost({ action: 'photographerLogin', email }).then(d => {
+      if (d && d.name) {
+        currentUser = { name: d.name, email, row: 0, isGuest: false, isPhotographer: true, data: null };
+        localStorage.setItem('dgr_user', JSON.stringify(currentUser));
+        loadData().then(showApp);
+      } else {
+        document.getElementById('photo-login-err').style.display = 'block';
+      }
+    }).catch(() => { document.getElementById('photo-login-err').style.display = 'block'; });
+  }
+}
+function loginAsPhotographer() { showPhotographerForm(); }
+
+function openPhotographerCabinet() {
+  const myPhotos = gallery.filter(ph => ph.owner_name === currentUser.name);
+  const limit = currentUser.data ? parseInt(currentUser.data['photo_limit']) || 0 : 0;
+  const limitStr = limit > 0 ? ` / ${limit}` : '';
+  const el = document.getElementById('photographer-cabinet-body');
+  el.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div style="font-size:17px;font-weight:700;color:var(--gold)">${currentUser.name}</div>
+      ${currentUser.email ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">📧 ${currentUser.email}</div>` : ''}
+      <div style="font-size:13px;color:var(--text);margin-top:8px">📷 Загружено: <strong>${myPhotos.length}${limitStr}</strong> фото</div>
+    </div>
+    ${myPhotos.length ? `<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px">Мои фото</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+      ${myPhotos.sort((a,b)=>new Date(b.uploaded_at||0)-new Date(a.uploaded_at||0)).map(ph => `
+        <div style="aspect-ratio:1;background:var(--card);border-radius:10px;overflow:hidden;position:relative">
+          <img src="${px(ph.photo_url)}" style="width:100%;height:100%;object-fit:cover" loading="lazy">
+        </div>`).join('')}
+    </div>` : '<div class="empty" style="margin-bottom:16px">Вы ещё не загружали фото</div>'}
+  `;
+  document.getElementById('photographer-cabinet').style.display = 'block';
 }
 
 function choiceByLink() {
@@ -681,7 +774,7 @@ function updateUserDisplay() {
     if (notifBtn) notifBtn.style.display = 'none';
   } else if (currentUser.isPhotographer) {
     const initials = currentUser.name.substring(0,2).toUpperCase();
-    el.innerHTML = `<div style="display:flex;align-items:center;gap:8px"><button class="user-btn" style="background:var(--gold);color:var(--black);font-size:11px;font-weight:900">${initials}</button><span style="font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.5px">📷<br>${currentUser.name.split(' ')[0]}</span></div>`;
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="openPhotographerCabinet()"><button class="user-btn" style="background:var(--gold);color:var(--black);font-size:11px;font-weight:900">${initials}</button><span style="font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.5px">📷<br>${currentUser.name.split(' ')[0]}</span></div>`;
     if (notifBtn) notifBtn.style.display = 'none';
   } else if (isAdmin()) {
     el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="openAdminPanel()"><button class="user-btn" style="background:#e53935;font-size:16px">👑</button><span style="font-size:11px;color:#e53935;font-weight:700;letter-spacing:.5px">АДМИН</span></div>`;
@@ -843,11 +936,15 @@ let gallerySortBy = 'new'; // 'new' | 'likes' | 'comments'
 function renderGallery() {
   const el = document.getElementById('gallery-view');
   const _gLimit = currentUser && currentUser.data ? parseInt(currentUser.data['photo_limit']) || 0 : 0;
-  const _gCount = currentUser ? gallery.filter(ph => String(ph.owner_row_id) === String(currentUser.row)).length : 0;
+  const _gCount = currentUser ? gallery.filter(ph =>
+    currentUser.isPhotographer
+      ? ph.owner_name === currentUser.name
+      : String(ph.owner_row_id) === String(currentUser.row)
+  ).length : 0;
   const _canUploadUser = currentUser && !currentUser.isGuest;
   const _limitOk = _gLimit === 0 || _gCount < _gLimit;
   const canUpload = _canUploadUser && _limitOk;
-  const _limitNote = _gLimit > 0 ? ` (${_gCount}/${_gLimit})` : '';
+  const _limitNote = _gLimit > 0 ? ` (${_gCount}/${_gLimit})` : _gCount > 0 ? ` (${_gCount})` : '';
   const _isPhotographer = currentUser && currentUser.isPhotographer;
   const uploadBtn = canUpload
     ? `<div class="gallery-upload-btn" onclick="startUpload('gallery_general')">📷 Загрузить фото в галерею${_limitNote}</div>`
@@ -1313,6 +1410,10 @@ function openAdminPanel() {
       <button onclick="openAdminEdit(${p._row})" style="background:var(--gold);color:var(--black);border:none;border-radius:8px;padding:7px 12px;font-weight:700;font-size:12px;cursor:pointer">✏ Ред.</button>
     </div>`).join('');
   document.getElementById('admin-panel').style.display = 'block';
+  // Update requests badge
+  const requests = JSON.parse(localStorage.getItem('dgr_photographer_requests') || '[]');
+  const badge = document.getElementById('admin-req-badge');
+  if (badge) { badge.textContent = requests.length; badge.style.display = requests.length ? 'inline-flex' : 'none'; }
 }
 
 function openAdminEdit(row) {
@@ -1356,13 +1457,14 @@ async function adminDeletePhoto(type) {
 }
 
 function adminSwitchTab(t) {
-  ['p','g'].forEach(x => {
+  ['p','g','r'].forEach(x => {
     document.getElementById('admin-section-'+x).style.display = x===t ? 'block' : 'none';
     const btn = document.getElementById('admin-tab-'+x);
     btn.style.borderBottomColor = x===t ? '#e53935' : 'transparent';
     btn.style.color = x===t ? '#e53935' : 'var(--muted)';
   });
   if (t === 'g') renderAdminGallery();
+  if (t === 'r') renderAdminRequests();
 }
 
 function renderAdminGallery() {
@@ -1397,6 +1499,48 @@ async function adminDeleteGalleryConfirmed() {
   toast('Фото удалено');
   await loadData(); renderAdminGallery(); renderAll();
   showLoad(false);
+}
+
+function renderAdminRequests() {
+  const el = document.getElementById('admin-section-r');
+  const requests = JSON.parse(localStorage.getItem('dgr_photographer_requests') || '[]');
+  const badge = document.getElementById('admin-req-badge');
+  if (badge) { badge.textContent = requests.length; badge.style.display = requests.length ? 'inline-flex' : 'none'; }
+  if (!requests.length) { el.innerHTML = '<div class="empty">Новых заявок нет</div>'; return; }
+  el.innerHTML = requests.map((r, i) => `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px">
+      <div style="font-weight:700;font-size:13px">${r.name}</div>
+      <div style="font-size:11px;color:var(--gold);margin:2px 0">📧 ${r.email}</div>
+      <div style="font-size:12px;color:var(--muted);margin:6px 0 10px;line-height:1.4">${r.motivation}</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:10px">${r.date ? new Date(r.date).toLocaleDateString('ru-RU') : ''}</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="adminApprovePhotographer(${i})" style="flex:1;background:var(--gold);color:var(--black);border:none;border-radius:8px;padding:8px;font-family:'Inter',sans-serif;font-weight:700;font-size:12px;cursor:pointer">✓ Одобрить</button>
+        <button onclick="adminRejectPhotographer(${i})" style="flex:1;background:none;border:1px solid #e53935;color:#e53935;border-radius:8px;padding:8px;font-family:'Inter',sans-serif;font-weight:700;font-size:12px;cursor:pointer">✕ Отклонить</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function adminApprovePhotographer(i) {
+  const requests = JSON.parse(localStorage.getItem('dgr_photographer_requests') || '[]');
+  const r = requests[i];
+  if (!r) return;
+  const approved = JSON.parse(localStorage.getItem('dgr_approved_photographers') || '[]');
+  approved.push({ name: r.name, email: r.email, approvedAt: new Date().toISOString() });
+  localStorage.setItem('dgr_approved_photographers', JSON.stringify(approved));
+  requests.splice(i, 1);
+  localStorage.setItem('dgr_photographer_requests', JSON.stringify(requests));
+  toast(`Одобрено: ${r.name}. Уведомите по email: ${r.email}`);
+  apiPost({ action: 'approvePhotographer', name: r.name, email: r.email }).catch(() => {});
+  renderAdminRequests();
+}
+
+function adminRejectPhotographer(i) {
+  const requests = JSON.parse(localStorage.getItem('dgr_photographer_requests') || '[]');
+  requests.splice(i, 1);
+  localStorage.setItem('dgr_photographer_requests', JSON.stringify(requests));
+  toast('Заявка отклонена');
+  renderAdminRequests();
 }
 
 document.getElementById('admin-edit-modal')?.addEventListener('click', e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
@@ -1753,8 +1897,9 @@ document.getElementById('style-picker-modal').addEventListener('click',e=>{if(e.
       <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:#e53935">👑 ПАНЕЛЬ АДМИНА</div>
     </div>
     <div style="display:flex">
-      <button id="admin-tab-p" onclick="adminSwitchTab('p')" style="flex:1;padding:10px;background:none;border:none;border-bottom:2px solid #e53935;color:#e53935;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">Участники</button>
-      <button id="admin-tab-g" onclick="adminSwitchTab('g')" style="flex:1;padding:10px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">Галерея</button>
+      <button id="admin-tab-p" onclick="adminSwitchTab('p')" style="flex:1;padding:10px;background:none;border:none;border-bottom:2px solid #e53935;color:#e53935;font-family:'Inter',sans-serif;font-size:11px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">Участники</button>
+      <button id="admin-tab-g" onclick="adminSwitchTab('g')" style="flex:1;padding:10px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:11px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">Галерея</button>
+      <button id="admin-tab-r" onclick="adminSwitchTab('r')" style="flex:1;padding:10px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'Inter',sans-serif;font-size:11px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px">Заявки<span id="admin-req-badge" style="display:none;background:#e53935;color:white;border-radius:50%;font-size:9px;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;margin-left:4px">0</span></button>
     </div>
   </div>
   <div id="admin-section-p" style="padding:14px">
@@ -1763,6 +1908,7 @@ document.getElementById('style-picker-modal').addEventListener('click',e=>{if(e.
   <div id="admin-section-g" style="padding:14px;display:none">
     <div id="admin-gallery-list"></div>
   </div>
+  <div id="admin-section-r" style="padding:14px;display:none"></div>
 </div>
 
 <!-- ADMIN DELETE GALLERY CONFIRM MODAL -->
@@ -1878,6 +2024,17 @@ document.getElementById('style-picker-modal').addEventListener('click',e=>{if(e.
     <div class="modal-sub">Выберите стиль вашего мотоцикла — это поможет другим участникам вас найти.</div>
     <div id="style-picker-options" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px"></div>
     <button class="modal-btn ghost" onclick="document.getElementById('style-picker-modal').classList.remove('open')">Отмена</button>
+  </div>
+</div>
+<!-- PHOTOGRAPHER CABINET -->
+<div id="photographer-cabinet" style="display:none;position:fixed;inset:0;background:var(--black);z-index:300;overflow-y:auto;max-width:480px;margin:0 auto;padding-bottom:40px">
+  <div style="position:sticky;top:0;background:rgba(8,8,8,.97);padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;z-index:10">
+    <button onclick="document.getElementById('photographer-cabinet').style.display='none'" style="background:none;border:none;color:var(--gold);font-size:24px;cursor:pointer;line-height:1">←</button>
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:var(--gold)">📷 МОЙ КАБИНЕТ</div>
+  </div>
+  <div style="padding:14px">
+    <div id="photographer-cabinet-body"></div>
+    <button onclick="document.getElementById('logout-modal').classList.add('open')" style="width:100%;background:transparent;border:1px solid #e53935;color:#e53935;border-radius:10px;padding:12px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px">↪ Выйти из аккаунта</button>
   </div>
 </div>
 </body>
