@@ -706,8 +706,14 @@ function authChoiceSelectParticipant() {
 }
 function authChoiceSelectPhotographer() {
   closeAuthChoice();
-  openAuthModal('Фотограф');
-  setTimeout(()=>{ document.getElementById('modal-photographer-form').style.display='block'; document.getElementById('modal-photo-toggle').style.display='none'; },50);
+  goToStartScreen();
+  setTimeout(()=>{ showPhotographerForm(); },50);
+}
+function goToStartScreen() {
+  document.getElementById('auth-code').style.display = 'block';
+  document.getElementById('auth-guest').style.display = 'none';
+  document.getElementById('auth-photographer').style.display = 'none';
+  showAuth();
 }
 async function authChoiceSubmitGuest() {
   const email = document.getElementById('auth-choice-email').value.trim();
@@ -888,7 +894,7 @@ function updateUserDisplay() {
   const el = document.getElementById('user-display');
   const notifBtn = document.getElementById('notif-btn');
   if (!currentUser || currentUser.isGuest) {
-    el.innerHTML = `<button class="login-btn" onclick="openAuthModal('Войдите как участник')">Войти</button>`;
+    el.innerHTML = `<button class="login-btn" onclick="goToStartScreen()">Войти</button>`;
     if (notifBtn) notifBtn.style.display = 'none';
   } else if (currentUser.isPhotographer) {
     const initials = currentUser.name.substring(0,2).toUpperCase();
