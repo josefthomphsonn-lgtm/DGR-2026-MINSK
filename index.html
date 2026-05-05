@@ -1046,11 +1046,11 @@ function openDetail(row) {
       </div>
       ${cb||cs ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px">
         <div style="text-align:center">
-          ${cb ? `<div style="font-size:10px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;gap:6px">${propIcon('bike',16)} ТОП Байк</div>
+          ${cb ? `<div style="font-size:10px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:flex-end;justify-content:center;gap:6px">${propIcon('bike',12)} ТОП Байк</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;justify-content:center;gap:4px">${svgIcon('trophy','icon-yellow',12)} ${gvb(p)} голосов</div>` : ''}
         </div>
         <div style="text-align:center">
-          ${cs ? `<div style="font-size:10px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;gap:6px">${propIcon('bowtie',14)} ТОП Стиль</div>
+          ${cs ? `<div style="font-size:10px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:flex-end;justify-content:center;gap:6px">${propIcon('bowtie',12)} ТОП Стиль</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;justify-content:center;gap:4px">${svgIcon('trophy','icon-yellow',12)} ${gvs(p)} голосов</div>` : ''}
         </div>
       </div>` : ''}
