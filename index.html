@@ -409,7 +409,7 @@ function svgIcon(name, cls='icon-yellow', size=20) {
 function propIcon(name, h) {
   const data = ICONS[name]||'';
   if (!data.startsWith('__IMG__')) return svgIcon(name, 'icon-yellow', h);
-  return `<img src="${data.slice(7)}" alt="" style="height:${h}px;width:auto;display:inline-block;flex-shrink:0">`;
+  return `<img src="${data.slice(7)}" alt="" style="height:${h}px;width:auto;display:inline-block;flex-shrink:0;position:static">`;
 }
 function iconMarkup(name, size=24, proportional=false) {
   const data = ICONS[name]||'';
