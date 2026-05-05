@@ -406,6 +406,11 @@ function svgIcon(name, cls='icon-yellow', size=20) {
   }
   return `<span class="${cls}" style="display:inline-flex;width:${size}px;height:${size}px;flex-shrink:0">${data}</span>`;
 }
+function propIcon(name, h) {
+  const data = ICONS[name]||'';
+  if (!data.startsWith('__IMG__')) return svgIcon(name, 'icon-yellow', h);
+  return `<img src="${data.slice(7)}" alt="" style="height:${h}px;width:auto;display:inline-block;flex-shrink:0">`;
+}
 function iconMarkup(name, size=24, proportional=false) {
   const data = ICONS[name]||'';
   if (data.startsWith('__IMG__')) {
@@ -1032,20 +1037,20 @@ function openDetail(row) {
       <div class="contest-slots">
         <div class="contest-slot${cb?' has-photo':''}" onclick="${isMe?`startUpload('contest_bike')`:cb?`openLbSingle('${cb}','${p['ФИО']}','ТОП Байк')`:``}">
           ${cb?`<img src="${px(cb)}"><div class="contest-slot-overlay"><span style="font-size:20px">✏</span><span style="font-size:11px;color:white">Изменить</span></div>`:''}
-          ${!cb?`<span style="display:inline-flex;transform:scale(1.8)">${svgIcon('bike','icon-yellow',32)}</span><span class="contest-slot-label" style="margin-top:10px">ТОП Байк</span>${isMe?`<span class="contest-slot-title">+ Загрузить</span>`:''}`:''}
+          ${!cb?`<div style="display:flex;align-items:center;justify-content:center;gap:10px">${propIcon('bike',32)}<span class="contest-slot-label" style="margin:0">ТОП Байк</span></div>${isMe?`<span class="contest-slot-title">+ Загрузить</span>`:''}`:''}
         </div>
         <div class="contest-slot${cs?' has-photo':''}" onclick="${isMe?`startUpload('contest_style')`:cs?`openLbSingle('${cs}','${p['ФИО']}','ТОП Стиль')`:``}">
           ${cs?`<img src="${px(cs)}"><div class="contest-slot-overlay"><span style="font-size:20px">✏</span><span style="font-size:11px;color:white">Изменить</span></div>`:''}
-          ${!cs?`<span style="display:inline-flex;transform:scale(1.8)">${svgIcon('bowtie','icon-yellow',32)}</span><span class="contest-slot-label" style="margin-top:10px">ТОП Стиль</span>${isMe?`<span class="contest-slot-title">+ Загрузить</span>`:''}`:''}
+          ${!cs?`<div style="display:flex;align-items:center;justify-content:center;gap:10px">${propIcon('bowtie',28)}<span class="contest-slot-label" style="margin:0">ТОП Стиль</span></div>${isMe?`<span class="contest-slot-title">+ Загрузить</span>`:''}`:''}
         </div>
       </div>
       ${cb||cs ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px">
         <div style="text-align:center">
-          ${cb ? `<div style="font-size:10px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;gap:6px"><span style="display:inline-flex;transform:scale(1.8);flex-shrink:0">${svgIcon('bike','icon-yellow',14)}</span> ТОП Байк</div>
+          ${cb ? `<div style="font-size:10px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;gap:6px">${propIcon('bike',16)} ТОП Байк</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;justify-content:center;gap:4px">${svgIcon('trophy','icon-yellow',12)} ${gvb(p)} голосов</div>` : ''}
         </div>
         <div style="text-align:center">
-          ${cs ? `<div style="font-size:10px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;gap:6px"><span style="display:inline-flex;transform:scale(1.8);flex-shrink:0">${svgIcon('bowtie','icon-yellow',14)}</span> ТОП Стиль</div>
+          ${cs ? `<div style="font-size:10px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;gap:6px">${propIcon('bowtie',14)} ТОП Стиль</div>
           <div style="font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;justify-content:center;gap:4px">${svgIcon('trophy','icon-yellow',12)} ${gvs(p)} голосов</div>` : ''}
         </div>
       </div>` : ''}
