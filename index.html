@@ -249,10 +249,18 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
       <button class="modal-btn" onclick="loginWithCode()">ВОЙТИ КАК УЧАСТНИК</button>
       <div class="divider">или</div>
       <div style="display:flex;gap:10px">
-        <button class="modal-btn ghost" style="flex:1;font-size:12px" onclick="loginAsGuest()">👁 Гость</button>
+        <button class="modal-btn ghost" style="flex:1;font-size:12px" onclick="showGuestForm()">👁 Гость</button>
         <button class="modal-btn ghost" style="flex:1;font-size:12px;border-color:var(--gold);color:var(--gold)" onclick="showPhotographerForm()">📷 Фотограф</button>
       </div>
+      <button class="modal-btn ghost" onclick="enterViewOnly()" style="font-size:11px;padding:9px;margin-top:6px;color:var(--muted);border-color:var(--border);width:100%">👁 Только просмотр страниц</button>
       <div style="text-align:center;margin-top:12px;font-size:10px;color:var(--border)">Для входа администратора введите код доступа выше</div>
+    </div>
+    <div class="modal-section" id="auth-guest" style="display:none">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Введите email — сможете ставить лайки и писать комментарии</p>
+      <input class="field" id="guest-email" placeholder="Ваш email" type="email" inputmode="email">
+      <div class="modal-err" id="guest-err">Введите корректный email</div>
+      <button class="modal-btn" onclick="submitGuestLogin()">ВОЙТИ КАК ГОСТЬ</button>
+      <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="hideGuestForm()">← Назад</button>
     </div>
     <div class="modal-section" id="auth-photographer" style="display:none">
       <!-- Default: two options -->
@@ -312,6 +320,15 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
     <div class="modal-err" id="modal-err">Email или код не найден</div>
     <button class="modal-btn" onclick="modalLogin()">ВОЙТИ КАК УЧАСТНИК</button>
     <div class="divider">или</div>
+    <div id="modal-guest-toggle" style="margin-bottom:8px">
+      <button class="modal-btn ghost" style="font-size:12px;width:100%" onclick="document.getElementById('modal-guest-form').style.display='block';document.getElementById('modal-guest-toggle').style.display='none'">👁 Войти как гость</button>
+    </div>
+    <div id="modal-guest-form" style="display:none">
+      <input class="field" id="modal-guest-email" placeholder="Ваш email" type="email" inputmode="email" style="margin-top:0">
+      <div class="modal-err" id="modal-guest-err">Введите корректный email</div>
+      <button class="modal-btn ghost" style="border-color:var(--gold);color:var(--gold)" onclick="modalLoginAsGuest()">ВОЙТИ КАК ГОСТЬ</button>
+      <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="document.getElementById('modal-guest-form').style.display='none';document.getElementById('modal-guest-toggle').style.display='block'">← Назад</button>
+    </div>
     <div id="modal-photo-toggle">
       <button class="modal-btn ghost" style="font-size:12px;width:100%" onclick="document.getElementById('modal-photographer-form').style.display='block';document.getElementById('modal-photo-toggle').style.display='none'">📷 Войти как фотограф</button>
     </div>
@@ -618,10 +635,104 @@ function switchAuthTab(t) {
 
 // loginWithCode replaced by admin version below
 
-function loginAsGuest() {
-  currentUser = { name:'Гость', row:0, isGuest:true, data:null };
+function getGuestKey() {
+  let k = localStorage.getItem('dgr_guest_key');
+  if (!k) { k = 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); localStorage.setItem('dgr_guest_key', k); }
+  return k;
+}
+function guestLiked(photoUrl) {
+  return !!(JSON.parse(localStorage.getItem('dgr_guest_likes')||'{}')[photoUrl]);
+}
+function setGuestLike(photoUrl, val) {
+  const likes = JSON.parse(localStorage.getItem('dgr_guest_likes')||'{}');
+  if (val) likes[photoUrl] = true; else delete likes[photoUrl];
+  localStorage.setItem('dgr_guest_likes', JSON.stringify(likes));
+}
+function showGuestForm() {
+  document.getElementById('auth-code').style.display = 'none';
+  document.getElementById('auth-guest').style.display = 'block';
+  document.getElementById('guest-err').style.display = 'none';
+  document.getElementById('guest-email').value = '';
+}
+function hideGuestForm() {
+  document.getElementById('auth-guest').style.display = 'none';
+  document.getElementById('auth-code').style.display = 'block';
+}
+function submitGuestLogin() {
+  const email = document.getElementById('guest-email').value.trim();
+  if (!email || !email.includes('@')) { document.getElementById('guest-err').style.display='block'; return; }
+  const name = email.split('@')[0];
+  currentUser = { name, email, row:0, isGuest:true, data:null };
   localStorage.setItem('dgr_user', JSON.stringify(currentUser));
   loadData().then(showApp);
+}
+function enterViewOnly() {
+  currentUser = null;
+  localStorage.removeItem('dgr_user');
+  loadData().then(showApp);
+}
+async function modalLoginAsGuest() {
+  const email = document.getElementById('modal-guest-email').value.trim();
+  if (!email || !email.includes('@')) { document.getElementById('modal-guest-err').style.display='block'; return; }
+  const name = email.split('@')[0];
+  currentUser = { name, email, row:0, isGuest:true, data:null };
+  localStorage.setItem('dgr_user', JSON.stringify(currentUser));
+  closeAuthModal();
+  await loadData(); updateUserDisplay(); renderAll();
+  toast('Добро пожаловать, ' + name + '!');
+}
+function openAuthChoice(reason) {
+  document.getElementById('auth-choice-reason').textContent = reason||'';
+  authChoiceBackToMain();
+  document.getElementById('auth-choice-modal').classList.add('open');
+}
+function closeAuthChoice() { document.getElementById('auth-choice-modal').classList.remove('open'); }
+function authChoiceBackToMain() {
+  document.getElementById('auth-choice-main').style.display='block';
+  document.getElementById('auth-choice-guest-form').style.display='none';
+  document.getElementById('auth-choice-participant-form').style.display='none';
+}
+function authChoiceSelectGuest() {
+  document.getElementById('auth-choice-main').style.display='none';
+  document.getElementById('auth-choice-guest-form').style.display='block';
+  document.getElementById('auth-choice-err').style.display='none';
+  document.getElementById('auth-choice-email').value='';
+}
+function authChoiceSelectParticipant() {
+  document.getElementById('auth-choice-main').style.display='none';
+  document.getElementById('auth-choice-participant-form').style.display='block';
+  document.getElementById('auth-choice-code-err').style.display='none';
+  document.getElementById('auth-choice-code').value='';
+}
+function authChoiceSelectPhotographer() {
+  closeAuthChoice();
+  openAuthModal('Фотограф');
+  setTimeout(()=>{ document.getElementById('modal-photographer-form').style.display='block'; document.getElementById('modal-photo-toggle').style.display='none'; },50);
+}
+async function authChoiceSubmitGuest() {
+  const email = document.getElementById('auth-choice-email').value.trim();
+  if (!email || !email.includes('@')) { document.getElementById('auth-choice-err').style.display='block'; return; }
+  const name = email.split('@')[0];
+  currentUser = { name, email, row:0, isGuest:true, data:null };
+  localStorage.setItem('dgr_user', JSON.stringify(currentUser));
+  closeAuthChoice();
+  await loadData(); updateUserDisplay(); renderAll();
+  toast('Добро пожаловать, ' + name + '!');
+}
+async function authChoiceSubmitParticipant() {
+  const code = document.getElementById('auth-choice-code').value.trim();
+  if (!code) return;
+  try {
+    const d = await apiPost({action:'login', code});
+    if (!d||!d.participant) throw new Error();
+    currentUser = { name:d.participant['ФИО'], row:d.participant._row, isGuest:false, data:d.participant };
+    localStorage.setItem('dgr_user', JSON.stringify(currentUser));
+    closeAuthChoice();
+    await loadData(); updateUserDisplay(); renderAll();
+    toast('Добро пожаловать, ' + currentUser.name + '!');
+  } catch(e) {
+    document.getElementById('auth-choice-code-err').style.display='block';
+  }
 }
 
 function showPhotographerForm() {
@@ -751,6 +862,8 @@ function openAuthModal(reason) {
   document.getElementById('modal-err').style.display='none';
   document.getElementById('modal-photographer-form').style.display='none';
   document.getElementById('modal-photo-toggle').style.display='block';
+  document.getElementById('modal-guest-form').style.display='none';
+  document.getElementById('modal-guest-toggle').style.display='block';
   document.getElementById('auth-modal').classList.add('open');
 }
 function closeAuthModal() { document.getElementById('auth-modal').classList.remove('open'); }
@@ -1564,18 +1677,29 @@ async function loadReactions() {
 }
 
 function getLikes(photoUrl) {
-  return reactions.filter(r => r.photo_url === photoUrl && r.type === 'like');
+  const list = reactions.filter(r => r.photo_url === photoUrl && r.type === 'like');
+  if (currentUser && currentUser.isGuest && guestLiked(photoUrl)) return [...list, {_guest:true}];
+  return list;
 }
 function getComments(photoUrl) {
   return reactions.filter(r => r.photo_url === photoUrl && r.type === 'comment');
 }
 function hasLiked(photoUrl) {
-  if (!currentUser || currentUser.isGuest) return false;
+  if (!currentUser) return false;
+  if (currentUser.isGuest) return guestLiked(photoUrl);
   return reactions.some(r => r.photo_url === photoUrl && r.type === 'like' && String(r.user_row) === String(currentUser.row));
 }
 
-async function toggleLike(photoUrl, ownerRow, btn) {
-  if (!currentUser || currentUser.isGuest) { openAuthModal('Войдите чтобы ставить лайки'); return; }
+async function toggleLike(photoUrl, ownerRow, btn, isTop=false) {
+  if (!currentUser) { openAuthChoice('Войдите чтобы поставить лайк'); return; }
+  if (currentUser.isGuest && isTop) { toast('Голосовать в конкурсе могут только участники'); return; }
+  if (currentUser.isGuest) {
+    const already = guestLiked(photoUrl);
+    setGuestLike(photoUrl, !already);
+    refreshLikeBtn(btn, photoUrl);
+    renderGallery(); renderTopBike(); renderTopStyle();
+    return;
+  }
   const already = hasLiked(photoUrl);
   btn.disabled = true;
   if (already) {
@@ -1586,12 +1710,8 @@ async function toggleLike(photoUrl, ownerRow, btn) {
     reactions.push({photo_url:photoUrl, photo_owner_row:ownerRow, user_name:currentUser.name, user_row:currentUser.row, type:'like', text:'', created_at:new Date().toISOString(), reaction_id:res.reaction_id});
   }
   btn.disabled = false;
-  // Update UI
   refreshLikeBtn(btn, photoUrl);
-  // Update counts in gallery
-  renderGallery();
-  renderTopBike();
-  renderTopStyle();
+  renderGallery(); renderTopBike(); renderTopStyle();
 }
 
 function refreshLikeBtn(btn, photoUrl) {
@@ -1608,7 +1728,7 @@ function reactionsBar(photoUrl, ownerRow, isTop=false) {
   const likeIcon = isTop ? (liked ? '🏆❤️' : '🏆🤍') : (liked ? '❤️' : '🤍');
   const likeTitle = isTop ? 'Голос в ТОП' : 'Нравится';
   return `<div class="reactions-bar">
-    <button class="react-btn ${liked?'liked':''}" onclick="toggleLike('${photoUrl}',${ownerRow},this)" title="${likeTitle}">${likeIcon} ${likes}</button>
+    <button class="react-btn ${liked?'liked':''}" onclick="toggleLike('${photoUrl}',${ownerRow},this,${isTop})" title="${likeTitle}">${likeIcon} ${likes}</button>
     <button class="react-btn" onclick="openPhotoComments('${photoUrl}',${ownerRow})">💬 ${comments}</button>
   </div>`;
 }
@@ -1638,7 +1758,7 @@ function renderCommentsPanel() {
     photoEl.style.display = 'none';
   }
   document.getElementById('comments-reactions').innerHTML = `
-    <button class="react-btn ${liked?'liked':''}" onclick="toggleLike('${commentsPhotoUrl}',${commentsOwnerRow},this)" style="font-size:16px">
+    <button class="react-btn ${liked?'liked':''}" onclick="toggleLike('${commentsPhotoUrl}',${commentsOwnerRow},this,false)" style="font-size:16px">
       ${liked?'❤️':'🤍'} ${likes.length} нравится
     </button>`;
   const list = document.getElementById('comments-list');
@@ -1664,8 +1784,8 @@ function renderCommentsPanel() {
 }
 
 async function sendComment() {
-  if (!currentUser || !commentsPhotoUrl) return;
-  if (currentUser.isGuest) { openAuthModal('Войдите чтобы комментировать'); return; }
+  if (!commentsPhotoUrl) return;
+  if (!currentUser) { openAuthChoice('Войдите чтобы комментировать'); return; }
   const inp = document.getElementById('comment-input');
   const text = inp.value.trim();
   if (!text) return;
@@ -2040,6 +2160,31 @@ document.getElementById('style-picker-modal').addEventListener('click',e=>{if(e.
   <div style="padding:14px">
     <div id="photographer-cabinet-body"></div>
     <button onclick="document.getElementById('logout-modal').classList.add('open')" style="width:100%;background:transparent;border:1px solid #e53935;color:#e53935;border-radius:10px;padding:12px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-top:8px">↪ Выйти из аккаунта</button>
+  </div>
+</div>
+<div class="modal-overlay" id="auth-choice-modal">
+  <div class="modal-sheet">
+    <div class="modal-title">Войдите для продолжения</div>
+    <div class="modal-sub" id="auth-choice-reason" style="margin-bottom:12px"></div>
+    <div id="auth-choice-main">
+      <button class="modal-btn" style="background:transparent;border:1.5px solid var(--gold);color:var(--gold)" onclick="authChoiceSelectGuest()">👁 Гость — лайки и комментарии</button>
+      <button class="modal-btn" style="margin-top:8px" onclick="authChoiceSelectParticipant()">🏍 Участник</button>
+      <button class="modal-btn ghost" style="margin-top:8px;font-size:12px" onclick="authChoiceSelectPhotographer()">📷 Фотограф</button>
+      <button class="modal-btn ghost" style="margin-top:8px;font-size:11px;padding:9px;color:var(--muted);border-color:var(--border)" onclick="closeAuthChoice()">Только просмотр</button>
+    </div>
+    <div id="auth-choice-guest-form" style="display:none">
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Введите email для гостевого входа</p>
+      <input class="field" id="auth-choice-email" placeholder="Ваш email" type="email" inputmode="email">
+      <div class="modal-err" id="auth-choice-err">Введите корректный email</div>
+      <button class="modal-btn" style="background:transparent;border:1.5px solid var(--gold);color:var(--gold)" onclick="authChoiceSubmitGuest()">ВОЙТИ КАК ГОСТЬ</button>
+      <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="authChoiceBackToMain()">← Назад</button>
+    </div>
+    <div id="auth-choice-participant-form" style="display:none">
+      <input class="field" id="auth-choice-code" placeholder="Email или код доступа" type="text" inputmode="email">
+      <div class="modal-err" id="auth-choice-code-err">Email или код не найден</div>
+      <button class="modal-btn" onclick="authChoiceSubmitParticipant()">ВОЙТИ КАК УЧАСТНИК</button>
+      <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="authChoiceBackToMain()">← Назад</button>
+    </div>
   </div>
 </div>
 </body>
