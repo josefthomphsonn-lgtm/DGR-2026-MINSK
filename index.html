@@ -731,7 +731,7 @@ async function authChoiceSubmitParticipant() {
   try {
     const d = await apiPost({action:'login', code});
     if (!d||!d.participant) throw new Error();
-    const isAdminUser = !!(d.participant['admin'] || d.participant['Admin'] || d.participant['ADMIN']);
+    const isAdminUser = Object.entries(d.participant).some(([k,v]) => k.toLowerCase().includes('admin') && v && v!=='0' && String(v).toUpperCase()!=='FALSE');
     currentUser = { name: isAdminUser ? 'Администратор' : d.participant['ФИО'], row:d.participant._row, isGuest:false, isAdmin:isAdminUser, data:d.participant };
     localStorage.setItem('dgr_user', JSON.stringify(currentUser));
     closeAuthChoice();
@@ -882,7 +882,7 @@ async function modalLogin() {
   showLoad(true);
   const d = await api({action:'login', code});
   if (d.error) { document.getElementById('modal-err').style.display='block'; showLoad(false); return; }
-  const isAdminUser = !!(d.participant['admin'] || d.participant['Admin'] || d.participant['ADMIN']);
+  const isAdminUser = Object.entries(d.participant).some(([k,v]) => k.toLowerCase().includes('admin') && v && v!=='0' && String(v).toUpperCase()!=='FALSE');
   currentUser = { name: isAdminUser ? 'Администратор' : d.participant['ФИО'], row: d.participant._row, isGuest: false, isAdmin: isAdminUser, data: d.participant };
   localStorage.setItem('dgr_user', JSON.stringify(currentUser));
   closeAuthModal(); await loadData(); updateUserDisplay(); renderAll();
@@ -1538,7 +1538,9 @@ async function loginWithCode() {
   try {
     const d = await api({action:'login', code});
     if (d.error) { document.getElementById('code-err').style.display='block'; showLoad(false); return; }
-    const isAdminUser = !!(d.participant['admin'] || d.participant['Admin'] || d.participant['ADMIN']);
+    const adminKey = Object.keys(d.participant).find(k => k.toLowerCase().includes('admin'));
+    const isAdminUser = adminKey ? (d.participant[adminKey] && d.participant[adminKey]!=='0' && String(d.participant[adminKey]).toUpperCase()!=='FALSE') : false;
+    if (adminKey) console.log('admin field:', adminKey, '=', d.participant[adminKey], '→ isAdmin:', isAdminUser);
     currentUser = { name: isAdminUser ? 'Администратор' : d.participant['ФИО'], row: d.participant._row, isGuest: false, isAdmin: isAdminUser, data: d.participant };
     localStorage.setItem('dgr_user', JSON.stringify(currentUser));
     await loadData(); showApp();
