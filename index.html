@@ -731,7 +731,8 @@ async function authChoiceSubmitParticipant() {
   try {
     const d = await apiPost({action:'login', code});
     if (!d||!d.participant) throw new Error();
-    currentUser = { name:d.participant['ФИО'], row:d.participant._row, isGuest:false, data:d.participant };
+    const isAdminUser = !!(d.participant['admin'] || d.participant['Admin'] || d.participant['ADMIN']);
+    currentUser = { name: isAdminUser ? 'Администратор' : d.participant['ФИО'], row:d.participant._row, isGuest:false, isAdmin:isAdminUser, data:d.participant };
     localStorage.setItem('dgr_user', JSON.stringify(currentUser));
     closeAuthChoice();
     await loadData(); updateUserDisplay(); renderAll();
@@ -881,7 +882,8 @@ async function modalLogin() {
   showLoad(true);
   const d = await api({action:'login', code});
   if (d.error) { document.getElementById('modal-err').style.display='block'; showLoad(false); return; }
-  currentUser = { name: d.participant['ФИО'], row: d.participant._row, isGuest: false, data: d.participant };
+  const isAdminUser = !!(d.participant['admin'] || d.participant['Admin'] || d.participant['ADMIN']);
+  currentUser = { name: isAdminUser ? 'Администратор' : d.participant['ФИО'], row: d.participant._row, isGuest: false, isAdmin: isAdminUser, data: d.participant };
   localStorage.setItem('dgr_user', JSON.stringify(currentUser));
   closeAuthModal(); await loadData(); updateUserDisplay(); renderAll();
   toast('Добро пожаловать, ' + currentUser.name.split(' ')[0] + '!');
@@ -1532,16 +1534,12 @@ document.getElementById('photo-link-modal')?.addEventListener('click', e => { if
 async function loginWithCode() {
   const code = document.getElementById('code-input').value.trim();
   if (!code) return;
-  if (code === ADMIN_CODE) {
-    currentUser = { name:'Администратор', row:0, isGuest:false, isAdmin:true, data:null };
-    localStorage.setItem('dgr_user', JSON.stringify(currentUser));
-    await loadData(); showApp(); return;
-  }
   showLoad(true);
   try {
     const d = await api({action:'login', code});
     if (d.error) { document.getElementById('code-err').style.display='block'; showLoad(false); return; }
-    currentUser = { name: d.participant['ФИО'], row: d.participant._row, isGuest: false, isAdmin: false, data: d.participant };
+    const isAdminUser = !!(d.participant['admin'] || d.participant['Admin'] || d.participant['ADMIN']);
+    currentUser = { name: isAdminUser ? 'Администратор' : d.participant['ФИО'], row: d.participant._row, isGuest: false, isAdmin: isAdminUser, data: d.participant };
     localStorage.setItem('dgr_user', JSON.stringify(currentUser));
     await loadData(); showApp();
   } catch(e) { toast('Ошибка соединения. Проверьте интернет.'); }
