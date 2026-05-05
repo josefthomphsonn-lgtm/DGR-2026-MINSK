@@ -545,18 +545,37 @@ function getPartners() {
 }
 function savePartners(list) { localStorage.setItem('dgr_partners', JSON.stringify(list)); }
 
+function getAboutText() {
+  return localStorage.getItem('dgr_about_text') || 'Ежегодный заезд джентльменов на классических и винтажных мотоциклах. Мы собираемся, чтобы поддержать программы здоровья мужчин и помочь детям, оставшимся без попечения родителей.';
+}
+function openEditAboutText() {
+  if (!isAdmin()) return;
+  document.getElementById('about-text-input').value = getAboutText();
+  document.getElementById('about-text-modal').classList.add('open');
+}
+function saveAboutText() {
+  const text = document.getElementById('about-text-input').value.trim();
+  if (!text) return;
+  localStorage.setItem('dgr_about_text', text);
+  document.getElementById('about-text-modal').classList.remove('open');
+  renderEvent();
+  toast('Текст обновлён!');
+}
+
 function renderEvent() {
   const el = document.getElementById('event-view');
   if (!el) return;
   const partners = getPartners();
   const canEdit = isAdmin();
+  const aboutText = getAboutText();
 
   el.innerHTML = `
     <div style="text-align:center;padding:24px 12px 18px;background:linear-gradient(180deg,var(--gold-glow),transparent);border:1px solid rgba(245,197,24,.15);border-radius:16px;margin-bottom:18px">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--gold);letter-spacing:3px;line-height:1">DGR 2026</div>
       <div style="font-size:11px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-top:6px">The Distinguished Gentleman's Ride · Минск</div>
-      <div style="font-size:13px;color:var(--text);margin-top:14px;line-height:1.5;max-width:380px;margin-left:auto;margin-right:auto">
-        Ежегодный заезд джентльменов на классических и винтажных мотоциклах. Мы собираемся, чтобы поддержать программы здоровья мужчин и помочь детям, оставшимся без попечения родителей.
+      <div style="position:relative;margin-top:14px;max-width:380px;margin-left:auto;margin-right:auto">
+        <div style="font-size:13px;color:var(--text);line-height:1.5">${aboutText}</div>
+        ${canEdit ? `<button onclick="openEditAboutText()" style="position:absolute;top:-2px;right:-2px;background:none;border:none;color:var(--gold);font-size:14px;cursor:pointer;opacity:.7;padding:2px" title="Редактировать описание">✎</button>` : ''}
       </div>
     </div>
 
@@ -569,12 +588,14 @@ function renderEvent() {
     </div>
 
     <div class="section-title" style="display:flex;align-items:center;justify-content:space-between">
-      <span>Наши партнёры</span>
+      <span>Наш выбор</span>
       ${canEdit ? `<button onclick="openAddPartner()" style="background:var(--gold);color:var(--black);border:none;border-radius:8px;padding:6px 10px;font-weight:700;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif">+ Добавить</button>` : ''}
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
       ${partners.map((p, i) => {
-        const iconEl = p.iconSvg
+        const iconEl = p.logoUrl
+          ? `<div style="width:44px;height:44px;border-radius:10px;overflow:hidden;flex-shrink:0;background:var(--card);display:flex;align-items:center;justify-content:center"><img src="${p.logoUrl}" style="width:100%;height:100%;object-fit:cover"></div>`
+          : p.iconSvg
           ? `<div style="width:44px;height:44px;border-radius:10px;overflow:hidden;flex-shrink:0;background:${p.iconBg||'var(--card)'}">${p.iconSvg}</div>`
           : `<div style="width:44px;height:44px;border-radius:10px;background:var(--gold-glow);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${p.icon || '🤝'}</div>`;
         return `<a href="${p.url}" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;text-decoration:none;color:var(--text);transition:border-color .15s" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
@@ -589,7 +610,11 @@ function renderEvent() {
       }).join('')}
     </div>
 
-    ${!canEdit ? `<div style="text-align:center;font-size:11px;color:var(--muted);margin-top:18px;padding:0 20px;line-height:1.5">Хотите стать партнёром? Свяжитесь с организаторами мероприятия.</div>` : `<button onclick="openAddPartner()" style="width:100%;background:transparent;border:1.5px dashed var(--border);color:var(--muted);border-radius:12px;padding:14px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-top:12px">+ Добавить партнёра</button>`}
+    ${canEdit
+      ? `<button onclick="openAddPartner()" style="width:100%;background:transparent;border:1.5px dashed var(--border);color:var(--muted);border-radius:12px;padding:14px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-top:12px">+ Добавить партнёра</button>`
+      : `<div style="text-align:center;margin-top:18px">
+          <button onclick="document.getElementById('partner-request-modal').classList.add('open')" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:10px;padding:10px 20px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;transition:border-color .15s" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Хотите стать партнёром?</button>
+        </div>`}
   `;
 }
 
@@ -598,21 +623,55 @@ function openAddPartner() {
   document.getElementById('partner-modal').classList.add('open');
 }
 
+async function uploadPartnerLogo(file) {
+  const compressed = await compressImage(file);
+  const fd = new FormData();
+  fd.append('file', compressed);
+  fd.append('upload_preset', CLD_PRESET);
+  const r = await fetch(`https://api.cloudinary.com/v1_1/${CLD_CLOUD}/image/upload`, { method: 'POST', body: fd });
+  const d = await r.json();
+  if (!d.secure_url) throw new Error(d.error?.message || 'Ошибка загрузки');
+  return d.secure_url;
+}
+
+async function onPartnerLogoChange(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const btn = document.getElementById('partner-logo-btn');
+  btn.textContent = 'Загрузка...';
+  btn.disabled = true;
+  try {
+    const url = await uploadPartnerLogo(file);
+    document.getElementById('partner-logo-url').value = url;
+    const preview = document.getElementById('partner-logo-preview');
+    preview.src = url;
+    preview.style.display = 'block';
+    btn.textContent = 'Логотип загружен ✓';
+  } catch(err) {
+    toast('Ошибка: ' + err.message);
+    btn.textContent = '+ Загрузить логотип';
+  }
+  btn.disabled = false;
+}
+
 function addPartner() {
   const name = document.getElementById('partner-name').value.trim();
   const url = document.getElementById('partner-url').value.trim();
   const desc = document.getElementById('partner-desc').value.trim();
-  const icon = document.getElementById('partner-icon').value.trim() || '🤝';
+  const logoUrl = document.getElementById('partner-logo-url').value.trim();
   if (!name || !url) { toast('Укажите название и ссылку'); return; }
   const fullUrl = url.startsWith('http') ? url : 'https://' + url;
   const partners = getPartners();
-  partners.push({ name, url: fullUrl, desc, icon });
+  partners.push({ name, url: fullUrl, desc, logoUrl });
   savePartners(partners);
   document.getElementById('partner-modal').classList.remove('open');
   document.getElementById('partner-name').value = '';
   document.getElementById('partner-url').value = '';
   document.getElementById('partner-desc').value = '';
-  document.getElementById('partner-icon').value = '';
+  document.getElementById('partner-logo-url').value = '';
+  document.getElementById('partner-logo-preview').style.display = 'none';
+  document.getElementById('partner-logo-btn').textContent = '+ Загрузить логотип';
+  document.getElementById('partner-logo-input').value = '';
   renderEvent();
   toast('Партнёр добавлен!');
 }
@@ -624,6 +683,22 @@ function removePartner(i) {
   partners.splice(i, 1);
   savePartners(partners);
   renderEvent();
+}
+
+function sendPartnerRequest() {
+  const name = document.getElementById('pr-name').value.trim();
+  const contact = document.getElementById('pr-contact').value.trim();
+  const message = document.getElementById('pr-message').value.trim();
+  if (!name || !contact) { toast('Укажите имя и контакт'); return; }
+  const requests = JSON.parse(localStorage.getItem('dgr_partner_requests') || '[]');
+  requests.push({ name, contact, message, created_at: new Date().toISOString() });
+  localStorage.setItem('dgr_partner_requests', JSON.stringify(requests));
+  document.getElementById('partner-request-modal').classList.remove('open');
+  document.getElementById('pr-name').value = '';
+  document.getElementById('pr-contact').value = '';
+  document.getElementById('pr-message').value = '';
+  updateNotifBadge();
+  toast('Заявка отправлена! Мы свяжемся с вами.');
 }
 
 // AUTH
@@ -1861,8 +1936,9 @@ function updateNotifBadge() {
   if (!badge) return;
   const cutoff = Date.now() - 24*60*60*1000;
   const unread = notifications.filter(n => new Date(n.created_at).getTime() > cutoff).length;
-  const requests = isAdmin() ? (JSON.parse(localStorage.getItem('dgr_photographer_requests')||'[]')).length : 0;
-  const total = unread + requests;
+  const photoReqs = isAdmin() ? (JSON.parse(localStorage.getItem('dgr_photographer_requests')||'[]')).length : 0;
+  const partnerReqs = isAdmin() ? (JSON.parse(localStorage.getItem('dgr_partner_requests')||'[]')).length : 0;
+  const total = unread + photoReqs + partnerReqs;
   if (total > 0) {
     badge.textContent = total > 9 ? '9+' : total;
     badge.style.display = 'flex';
@@ -1871,10 +1947,19 @@ function updateNotifBadge() {
   }
 }
 
+function dismissPartnerRequest(i) {
+  const reqs = JSON.parse(localStorage.getItem('dgr_partner_requests')||'[]');
+  reqs.splice(i, 1);
+  localStorage.setItem('dgr_partner_requests', JSON.stringify(reqs));
+  openNotifications();
+  updateNotifBadge();
+}
+
 function openNotifications() {
   const list = document.getElementById('notif-list');
-  const requests = isAdmin() ? JSON.parse(localStorage.getItem('dgr_photographer_requests')||'[]') : [];
-  const reqHtml = requests.map((r,i) => `
+  const photoRequests = isAdmin() ? JSON.parse(localStorage.getItem('dgr_photographer_requests')||'[]') : [];
+  const partnerRequests = isAdmin() ? JSON.parse(localStorage.getItem('dgr_partner_requests')||'[]') : [];
+  const reqHtml = photoRequests.map((r,i) => `
     <div style="background:var(--card);border:1px solid #e53935;border-radius:12px;padding:12px;margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:20px">📷</span>
@@ -1888,7 +1973,19 @@ function openNotifications() {
         <button onclick="adminRejectPhotographer(${i});openNotifications()" style="flex:1;background:none;border:1px solid #e53935;color:#e53935;border-radius:8px;padding:6px;font-size:11px;font-weight:700;cursor:pointer">✕ Отклонить</button>
       </div>
     </div>`).join('');
-  if (!notifications.length && !requests.length) {
+  const partnerHtml = partnerRequests.map((r,i) => `
+    <div style="background:var(--card);border:1px solid var(--gold);border-radius:12px;padding:12px;margin-bottom:8px">
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <span style="font-size:20px">🤝</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:700;color:var(--text)">${r.name}</div>
+          <div style="font-size:11px;color:var(--muted)">Заявка партнёра · ${r.contact}</div>
+          ${r.message ? `<div style="font-size:12px;color:var(--text);margin-top:6px;line-height:1.4">"${r.message}"</div>` : ''}
+        </div>
+        <button onclick="dismissPartnerRequest(${i})" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px;flex-shrink:0" title="Закрыть">✕</button>
+      </div>
+    </div>`).join('');
+  if (!notifications.length && !photoRequests.length && !partnerRequests.length) {
     list.innerHTML = '<div class="empty">Уведомлений пока нет</div>';
   } else {
     const notifHtml = notifications.map(n => {
@@ -1906,7 +2003,7 @@ function openNotifications() {
         </div>
       </div>`;
     }).join('');
-    list.innerHTML = reqHtml + notifHtml;
+    list.innerHTML = reqHtml + partnerHtml + notifHtml;
   }
   const badge = document.getElementById('notif-count');
   if (badge) badge.style.display = 'none';
@@ -2192,10 +2289,41 @@ document.getElementById('style-picker-modal').addEventListener('click',e=>{if(e.
     <input class="field" id="partner-url" placeholder="https://example.com">
     <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Описание (необязательно)</div>
     <input class="field" id="partner-desc" placeholder="Краткое описание">
-    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Иконка / эмодзи</div>
-    <input class="field" id="partner-icon" placeholder="🤝" maxlength="2">
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Логотип (необязательно)</div>
+    <input type="hidden" id="partner-logo-url">
+    <input type="file" id="partner-logo-input" accept="image/*" style="display:none" onchange="onPartnerLogoChange(event)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button id="partner-logo-btn" type="button" onclick="document.getElementById('partner-logo-input').click()" style="background:var(--card);border:1.5px dashed var(--border);color:var(--muted);border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">+ Загрузить логотип</button>
+      <img id="partner-logo-preview" src="" alt="" style="display:none;width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid var(--border)">
+    </div>
     <button class="modal-btn" onclick="addPartner()">ДОБАВИТЬ</button>
     <button class="modal-btn ghost" onclick="document.getElementById('partner-modal').classList.remove('open')">Отмена</button>
+  </div>
+</div>
+
+<!-- ABOUT TEXT EDIT MODAL -->
+<div class="modal-overlay" id="about-text-modal">
+  <div class="modal-sheet">
+    <div class="modal-title">Описание мероприятия</div>
+    <textarea id="about-text-input" class="field" rows="5" style="resize:vertical;height:120px" placeholder="Текст описания..."></textarea>
+    <button class="modal-btn" onclick="saveAboutText()">СОХРАНИТЬ</button>
+    <button class="modal-btn ghost" onclick="document.getElementById('about-text-modal').classList.remove('open')">Отмена</button>
+  </div>
+</div>
+
+<!-- PARTNER REQUEST MODAL -->
+<div class="modal-overlay" id="partner-request-modal">
+  <div class="modal-sheet">
+    <div class="modal-title">Стать партнёром</div>
+    <div class="modal-sub">Расскажите о себе — мы свяжемся с вами</div>
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Ваше имя / компания</div>
+    <input class="field" id="pr-name" placeholder="Название компании или имя">
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Контакт (email / телефон)</div>
+    <input class="field" id="pr-contact" placeholder="email@example.com">
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Сообщение</div>
+    <textarea class="field" id="pr-message" rows="4" style="resize:vertical;height:100px" placeholder="Кратко о сотрудничестве..."></textarea>
+    <button class="modal-btn" onclick="sendPartnerRequest()">ОТПРАВИТЬ</button>
+    <button class="modal-btn ghost" onclick="document.getElementById('partner-request-modal').classList.remove('open')">Отмена</button>
   </div>
 </div>
 
