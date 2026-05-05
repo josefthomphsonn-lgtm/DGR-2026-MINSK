@@ -488,14 +488,19 @@ async function loadData() {
     participants = p.participants || [];
     gallery = g.photos || [];
     reactions = r.reactions || [];
-    if (currentUser && !currentUser.isGuest && !currentUser.isAdmin) {
-      const me = participants.find(x => x._row == currentUser.row);
-      if (me) { 
-        currentUser.data = me; 
-        localStorage.setItem('dgr_user', JSON.stringify(currentUser)); 
+    if (currentUser && !currentUser.isGuest) {
+      if (!currentUser.isAdmin) {
+        const me = participants.find(x => x._row == currentUser.row);
+        if (me) { 
+          currentUser.data = me; 
+          localStorage.setItem('dgr_user', JSON.stringify(currentUser)); 
+        }
+        // Load notifications in background
+        loadNotifications();
+      } else {
+        // Для админа — сразу обновить бейдж по localStorage (запросы уже там)
+        updateNotifBadge();
       }
-      // Load notifications in background
-      loadNotifications();
     }
   } catch(e) { 
     console.error('Load error:', e);
@@ -579,7 +584,10 @@ function renderEvent() {
       </div>
     </div>
 
-    <div class="section-title" style="margin-top:0">О мероприятии</div>
+    <div class="section-title" style="margin-top:0;display:flex;align-items:center;justify-content:space-between">
+      <span>О мероприятии</span>
+      ${canEdit ? `<button onclick="openEditAboutText()" style="background:none;border:1px solid var(--border);color:var(--gold);border-radius:8px;padding:4px 10px;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer">✏ Редактировать</button>` : ''}
+    </div>
     <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:13px;line-height:1.6;color:var(--text)">
       <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start">${svgIcon('calendar','icon-yellow',22)}<div><b>Дата:</b> май 2026</div></div>
       <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start">${svgIcon('pin','icon-yellow',22)}<div><b>Место:</b> Минск, Беларусь</div></div>
@@ -678,11 +686,13 @@ function addPartner() {
 
 function removePartner(i) {
   if (!isAdmin()) return;
-  if (!confirm('Удалить партнёра?')) return;
   const partners = getPartners();
-  partners.splice(i, 1);
-  savePartners(partners);
-  renderEvent();
+  const name = partners[i] ? partners[i].name : 'партнёра';
+  showConfirm(`Удалить "${name}" из списка партнёров?`, () => {
+    partners.splice(i, 1);
+    savePartners(partners);
+    renderEvent();
+  }, 'Удалить партнёра');
 }
 
 function sendPartnerRequest() {
@@ -693,12 +703,18 @@ function sendPartnerRequest() {
   const requests = JSON.parse(localStorage.getItem('dgr_partner_requests') || '[]');
   requests.push({ name, contact, message, created_at: new Date().toISOString() });
   localStorage.setItem('dgr_partner_requests', JSON.stringify(requests));
-  document.getElementById('partner-request-modal').classList.remove('open');
-  document.getElementById('pr-name').value = '';
-  document.getElementById('pr-contact').value = '';
-  document.getElementById('pr-message').value = '';
   updateNotifBadge();
-  toast('Заявка отправлена! Мы свяжемся с вами.');
+  // Показываем экран подтверждения внутри модального окна
+  const sheet = document.querySelector('#partner-request-modal .modal-sheet');
+  sheet.innerHTML = `
+    <div style="text-align:center;padding:20px 0">
+      <div style="font-size:56px;margin-bottom:16px">🤝</div>
+      <div class="modal-title" style="font-size:24px">Заявка отправлена!</div>
+      <div class="modal-sub" style="margin-top:8px;font-size:14px;line-height:1.6">
+        Спасибо, <strong>${name}</strong>!<br>Мы свяжемся с вами по контакту:<br><span style="color:var(--gold)">${contact}</span>
+      </div>
+      <button class="modal-btn" style="margin-top:24px" onclick="document.getElementById('partner-request-modal').classList.remove('open');document.getElementById('pr-name').value='';document.getElementById('pr-contact').value='';document.getElementById('pr-message').value=''">Закрыть</button>
+    </div>`;
 }
 
 // AUTH
@@ -1020,6 +1036,7 @@ function updateUserDisplay() {
       <button onclick="openAdminPanel()" style="background:#e53935;border:none;border-radius:8px;padding:5px 8px;color:white;font-size:13px;cursor:pointer;flex-shrink:0" title="Панель администратора">👑</button>
     </div>`;
     if (notifBtn) notifBtn.style.display = 'flex';
+    updateNotifBadge();
   } else {
     const portrait = currentUser.data && currentUser.data['portrait_photo'];
     const initials = currentUser.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
@@ -1259,7 +1276,10 @@ function openDetail(row) {
       </div>
     </div>
     ${(p['bike_style']||isMe)?`<div style="padding:0 16px 10px">${p['bike_style']?`<span style="display:inline-flex;align-items:center;gap:6px;background:var(--gold-glow);border:1px solid var(--gold);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--gold)">${p['bike_style']}${isMe?`<button onclick="openStylePicker()" style="background:none;border:none;color:var(--gold);cursor:pointer;font-size:11px;padding:0;line-height:1">✏</button>`:''}</span>`:isMe?`<button onclick="openStylePicker()" style="background:transparent;border:1.5px dashed var(--border);color:var(--muted);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">+ Стиль байка</button>`:''}</div>`:''}
-    <div class="section-title" style="padding:0 16px 0;margin-top:0">Заводское фото байка</div>
+    <div class="section-title" style="padding:0 16px 0;margin-top:0;display:flex;align-items:center;justify-content:space-between">
+        <span>Заводское фото байка</span>
+        ${isMe?`<button onclick="openFactoryPhotoEdit()" style="background:none;border:1px solid var(--border);color:var(--gold);border-radius:8px;padding:4px 10px;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer;margin-right:16px">✏ Изменить</button>`:''}
+      </div>
     ${factory?`<img src="${px(factory)}" onclick="openLbSingle('${factory}','${p['ФИО']}','Заводское фото байка')" style="width:100%;max-height:280px;object-fit:contain;background:var(--card);cursor:pointer;display:block">`:`<div class="detail-hero-ph">🏍</div>`}
     <div class="detail-body">
 
@@ -1292,7 +1312,7 @@ function openDetail(row) {
         </div>
       </div>` : ''}
 
-      <div class="section-title" style="margin-top:14px">📖 История байка</div>
+      <div class="section-title" style="margin-top:14px">История байка</div>
       ${isMe ? `
         <textarea id="bike-story-area" 
           onblur="saveBikeStory(this.value)"
@@ -1525,7 +1545,12 @@ function lbNav(dir) { lbIndex=(lbIndex+dir+lbImages.length)%lbImages.length; sho
 function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
 async function deleteMyPhoto() {
   if (!lbCurrentPhoto || !currentUser || currentUser.isGuest) return;
-  if (!confirm('Удалить это фото?')) return;
+  showConfirm('Удалить это фото? Действие нельзя отменить.', async () => {
+    await _doDeleteMyPhoto();
+  }, 'Удалить фото');
+}
+async function _doDeleteMyPhoto() {
+  if (!lbCurrentPhoto || !currentUser || currentUser.isGuest) return;
   showLoad(true);
   try {
     // Remove from gallery sheet
@@ -1766,13 +1791,34 @@ function adminApprovePhotographer(i) {
   const r = requests[i];
   if (!r) return;
   const approved = JSON.parse(localStorage.getItem('dgr_approved_photographers') || '[]');
-  approved.push({ name: r.name, email: r.email, approvedAt: new Date().toISOString() });
-  localStorage.setItem('dgr_approved_photographers', JSON.stringify(approved));
-  requests.splice(i, 1);
+  if (!approved.find(a => a.email === r.email)) {
+    approved.push({ name: r.name, email: r.email, approvedAt: new Date().toISOString() });
+    localStorage.setItem('dgr_approved_photographers', JSON.stringify(approved));
+  }
+  // Помечаем как одобренного, но не удаляем из списка
+  requests[i] = { ...r, approved: true, approvedAt: new Date().toISOString(), read: true };
   localStorage.setItem('dgr_photographer_requests', JSON.stringify(requests));
   toast(`Одобрено: ${r.name}. Уведомите по email: ${r.email}`);
   apiPost({ action: 'approvePhotographer', name: r.name, email: r.email }).catch(() => {});
   renderAdminRequests();
+  updateNotifBadge();
+}
+
+function adminRevokePhotographer(i) {
+  const requests = JSON.parse(localStorage.getItem('dgr_photographer_requests') || '[]');
+  const r = requests[i];
+  if (!r) return;
+  const approved = JSON.parse(localStorage.getItem('dgr_approved_photographers') || '[]');
+  const idx = approved.findIndex(a => a.email === r.email);
+  if (idx !== -1) approved.splice(idx, 1);
+  localStorage.setItem('dgr_approved_photographers', JSON.stringify(approved));
+  // Возвращаем заявку в статус ожидания
+  requests[i] = { ...r, approved: false, approvedAt: null, read: true };
+  localStorage.setItem('dgr_photographer_requests', JSON.stringify(requests));
+  toast(`Одобрение отменено: ${r.name}`);
+  apiPost({ action: 'revokePhotographer', email: r.email }).catch(() => {});
+  renderAdminRequests();
+  updateNotifBadge();
 }
 
 function adminRejectPhotographer(i) {
@@ -1934,10 +1980,12 @@ async function loadNotifications() {
 function updateNotifBadge() {
   const badge = document.getElementById('notif-count');
   if (!badge) return;
-  const cutoff = Date.now() - 24*60*60*1000;
-  const unread = notifications.filter(n => new Date(n.created_at).getTime() > cutoff).length;
-  const photoReqs = isAdmin() ? (JSON.parse(localStorage.getItem('dgr_photographer_requests')||'[]')).length : 0;
-  const partnerReqs = isAdmin() ? (JSON.parse(localStorage.getItem('dgr_partner_requests')||'[]')).length : 0;
+  // Непрочитанные лайки/комменты — новее последнего открытия панели
+  const lastSeen = parseInt(localStorage.getItem('dgr_notif_last_seen') || '0');
+  const unread = notifications.filter(n => new Date(n.created_at).getTime() > lastSeen).length;
+  // Запросы фотографов и партнёров — только непрочитанные (без флага read)
+  const photoReqs = isAdmin() ? (JSON.parse(localStorage.getItem('dgr_photographer_requests')||'[]')).filter(r=>!r.read).length : 0;
+  const partnerReqs = isAdmin() ? (JSON.parse(localStorage.getItem('dgr_partner_requests')||'[]')).filter(r=>!r.read).length : 0;
   const total = unread + photoReqs + partnerReqs;
   if (total > 0) {
     badge.textContent = total > 9 ? '9+' : total;
@@ -1949,22 +1997,65 @@ function updateNotifBadge() {
 
 function dismissPartnerRequest(i) {
   const reqs = JSON.parse(localStorage.getItem('dgr_partner_requests')||'[]');
-  reqs.splice(i, 1);
-  localStorage.setItem('dgr_partner_requests', JSON.stringify(reqs));
-  openNotifications();
-  updateNotifBadge();
+  if (!reqs[i]) return;
+  const name = reqs[i].name || 'заявку';
+  // Показываем встроенный confirm прямо в notif-panel
+  const list = document.getElementById('notif-list');
+  list.insertAdjacentHTML('afterbegin', `
+    <div id="inline-confirm-${i}" style="background:#1a0000;border:1.5px solid #e53935;border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px">Удалить заявку от «${name}»?</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="
+          var r=JSON.parse(localStorage.getItem('dgr_partner_requests')||'[]');
+          r.splice(${i},1);
+          localStorage.setItem('dgr_partner_requests',JSON.stringify(r));
+          openNotifications();updateNotifBadge();
+        " style="flex:1;background:#e53935;color:white;border:none;border-radius:8px;padding:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:Inter,sans-serif">Удалить</button>
+        <button onclick="document.getElementById('inline-confirm-${i}').remove()" style="flex:1;background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:8px;font-weight:700;font-size:12px;cursor:pointer;font-family:Inter,sans-serif">Отмена</button>
+      </div>
+    </div>`);
 }
 
 function openNotifications() {
   const list = document.getElementById('notif-list');
+
+  // Помечаем все запросы как прочитанные (read:true) при открытии
+  if (isAdmin()) {
+    const pReqs = JSON.parse(localStorage.getItem('dgr_photographer_requests')||'[]');
+    pReqs.forEach(r => r.read = true);
+    localStorage.setItem('dgr_photographer_requests', JSON.stringify(pReqs));
+    const ptReqs = JSON.parse(localStorage.getItem('dgr_partner_requests')||'[]');
+    ptReqs.forEach(r => r.read = true);
+    localStorage.setItem('dgr_partner_requests', JSON.stringify(ptReqs));
+  }
+  // Запоминаем время последнего просмотра для лайков/комментов
+  localStorage.setItem('dgr_notif_last_seen', Date.now().toString());
+
   const photoRequests = isAdmin() ? JSON.parse(localStorage.getItem('dgr_photographer_requests')||'[]') : [];
   const partnerRequests = isAdmin() ? JSON.parse(localStorage.getItem('dgr_partner_requests')||'[]') : [];
-  const reqHtml = photoRequests.map((r,i) => `
-    <div style="background:var(--card);border:1px solid #e53935;border-radius:12px;padding:12px;margin-bottom:8px">
+
+  const reqHtml = photoRequests.map((r,i) => {
+    if (r.approved) {
+      // Одобренный фотограф — строка остаётся с кнопкой отмены
+      return `<div style="background:var(--card);border:1px solid #2a5a2a;border-radius:12px;padding:12px;margin-bottom:8px;opacity:0.75">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:20px">📷</span>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:700;color:var(--text)">${r.name}</div>
+            <div style="font-size:11px;color:#4caf50">✓ Одобрен · ${r.email}</div>
+            ${r.approvedAt ? `<div style="font-size:10px;color:var(--muted)">${new Date(r.approvedAt).toLocaleDateString('ru-RU')}</div>` : ''}
+          </div>
+          <button onclick="adminRevokePhotographer(${i});openNotifications()" style="background:none;border:1px solid #e53935;color:#e53935;border-radius:8px;padding:4px 8px;font-size:10px;font-weight:700;cursor:pointer">Отменить</button>
+        </div>
+      </div>`;
+    }
+    const borderColor = r.read ? 'var(--border)' : '#e53935';
+    const readLabel = r.read ? '<span style="font-size:9px;color:var(--muted);margin-left:6px">прочитано</span>' : '';
+    return `<div style="background:var(--card);border:1px solid ${borderColor};border-radius:12px;padding:12px;margin-bottom:8px${r.read?';opacity:0.8':''}">
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:20px">📷</span>
         <div style="flex:1">
-          <div style="font-size:12px;font-weight:700;color:var(--text)">${r.name}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text)">${r.name}${readLabel}</div>
           <div style="font-size:11px;color:var(--muted)">Заявка фотографа · ${r.email}</div>
         </div>
       </div>
@@ -1972,19 +2063,26 @@ function openNotifications() {
         <button onclick="adminApprovePhotographer(${i});openNotifications()" style="flex:1;background:var(--gold);color:var(--black);border:none;border-radius:8px;padding:6px;font-size:11px;font-weight:700;cursor:pointer">✓ Одобрить</button>
         <button onclick="adminRejectPhotographer(${i});openNotifications()" style="flex:1;background:none;border:1px solid #e53935;color:#e53935;border-radius:8px;padding:6px;font-size:11px;font-weight:700;cursor:pointer">✕ Отклонить</button>
       </div>
-    </div>`).join('');
-  const partnerHtml = partnerRequests.map((r,i) => `
-    <div style="background:var(--card);border:1px solid var(--gold);border-radius:12px;padding:12px;margin-bottom:8px">
+    </div>`;
+  }).join('');
+
+  const partnerHtml = partnerRequests.map((r,i) => {
+    const borderColor = r.read ? 'var(--border)' : 'var(--gold)';
+    const readLabel = r.read ? '<span style="font-size:9px;color:var(--muted);margin-left:6px">прочитано</span>' : '';
+    return `<div style="background:var(--card);border:1px solid ${borderColor};border-radius:12px;padding:12px;margin-bottom:8px${r.read?';opacity:0.8':''}">
       <div style="display:flex;align-items:flex-start;gap:8px">
         <span style="font-size:20px">🤝</span>
         <div style="flex:1;min-width:0">
-          <div style="font-size:12px;font-weight:700;color:var(--text)">${r.name}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--text)">${r.name}${readLabel}</div>
           <div style="font-size:11px;color:var(--muted)">Заявка партнёра · ${r.contact}</div>
           ${r.message ? `<div style="font-size:12px;color:var(--text);margin-top:6px;line-height:1.4">"${r.message}"</div>` : ''}
         </div>
-        <button onclick="dismissPartnerRequest(${i})" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 4px;flex-shrink:0" title="Закрыть">✕</button>
+        <button onclick="dismissPartnerRequest(${i})" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:5px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;flex-shrink:0;white-space:nowrap">✕ Удалить</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+
+  const lastSeen = parseInt(localStorage.getItem('dgr_notif_last_seen') || '0');
   if (!notifications.length && !photoRequests.length && !partnerRequests.length) {
     list.innerHTML = '<div class="empty">Уведомлений пока нет</div>';
   } else {
@@ -1992,11 +2090,12 @@ function openNotifications() {
       const icon = n.type === 'like' ? '❤️' : '💬';
       const action = n.type === 'like' ? 'поставил лайк' : 'прокомментировал';
       const time = n.created_at ? new Date(n.created_at).toLocaleDateString('ru',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
-      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer" onclick="openPhotoFromNotif('${n.photo_url}')">
+      const isUnread = new Date(n.created_at).getTime() > lastSeen;
+      return `<div style="background:var(--card);border:1px solid ${isUnread?'rgba(245,197,24,.3)':'var(--border)'};border-radius:12px;padding:12px;margin-bottom:8px;cursor:pointer${isUnread?';box-shadow:0 0 0 1px rgba(245,197,24,.15)':''}" onclick="openPhotoFromNotif('${n.photo_url}')">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:20px">${icon}</span>
           <div style="flex:1">
-            <div style="font-size:13px;font-weight:600">${n.user_name||'Кто-то'} ${action} ваше фото</div>
+            <div style="font-size:13px;font-weight:600">${n.user_name||'Кто-то'} ${action} ваше фото${isUnread?'<span style="display:inline-block;width:6px;height:6px;background:var(--gold);border-radius:50%;margin-left:6px;vertical-align:middle"></span>':''}</div>
             <div style="font-size:10px;color:var(--muted);margin-top:2px">${time}</div>
             ${n.text ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">"${n.text}"</div>` : ''}
           </div>
@@ -2005,8 +2104,7 @@ function openNotifications() {
     }).join('');
     list.innerHTML = reqHtml + partnerHtml + notifHtml;
   }
-  const badge = document.getElementById('notif-count');
-  if (badge) badge.style.display = 'none';
+  updateNotifBadge();
   document.getElementById('notif-panel').style.display = 'block';
 }
 
@@ -2027,8 +2125,26 @@ async function saveBikeStory(text) {
 function editBikeInfo() {
   if (!currentUser || !currentUser.data) return;
   document.getElementById('bike-name-input').value = currentUser.data['МОТОЦИКЛ'] || '';
-  document.getElementById('bike-photo-input').value = currentUser.data['ЗАВОДСКОЕ ФОТО'] || '';
+  document.getElementById('rider-name-input').value = currentUser.data['ФИО'] || '';
   document.getElementById('bike-edit-modal').classList.add('open');
+}
+
+function openFactoryPhotoEdit() {
+  document.getElementById('factory-photo-modal').classList.add('open');
+  document.getElementById('bike-photo-input').value = currentUser.data && currentUser.data['ЗАВОДСКОЕ ФОТО'] || '';
+}
+
+async function saveFactoryPhoto() {
+  const bikePhoto = document.getElementById('bike-photo-input').value.trim();
+  if (!bikePhoto) { document.getElementById('factory-photo-modal').classList.remove('open'); return; }
+  showLoad(true);
+  const res = await apiPost({action:'updateParticipant', row:currentUser.row, fields:{'ЗАВОДСКОЕ ФОТО': bikePhoto}});
+  if (res.error) { toast('Ошибка: ' + res.error); showLoad(false); return; }
+  toast('Фото обновлено!');
+  document.getElementById('factory-photo-modal').classList.remove('open');
+  await loadData(); renderAll();
+  if (currentRecord) setTimeout(() => openDetail(currentRecord._row), 100);
+  showLoad(false);
 }
 
 function uploadFactoryPhoto() {
@@ -2039,23 +2155,24 @@ function uploadFactoryPhoto() {
 
 async function saveBikeInfo() {
   const bikeName = document.getElementById('bike-name-input').value.trim();
-  const bikePhoto = document.getElementById('bike-photo-input').value.trim();
+  const riderName = document.getElementById('rider-name-input').value.trim();
   const fields = {};
   if (bikeName) fields['МОТОЦИКЛ'] = bikeName;
-  if (bikePhoto) fields['ЗАВОДСКОЕ ФОТО'] = bikePhoto;
+  if (riderName) fields['ФИО'] = riderName;
   if (!Object.keys(fields).length) { document.getElementById('bike-edit-modal').classList.remove('open'); return; }
   showLoad(true);
   const res = await apiPost({action:'updateParticipant', row:currentUser.row, fields});
   if (res.error) { toast('Ошибка: ' + res.error); showLoad(false); return; }
   toast('Сохранено!');
+  if (riderName) { currentUser.name = riderName; localStorage.setItem('dgr_user', JSON.stringify(currentUser)); }
   document.getElementById('bike-edit-modal').classList.remove('open');
-  await loadData();
-  renderAll();
+  await loadData(); renderAll();
   if (currentRecord) setTimeout(() => openDetail(currentRecord._row), 100);
   showLoad(false);
 }
 
 document.getElementById('bike-edit-modal')?.addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.classList.remove('open'); });
+document.getElementById('factory-photo-modal')?.addEventListener('click', e => { if(e.target===e.currentTarget) e.currentTarget.classList.remove('open'); });
 
 // ── BIKE SPECS EDIT ──
 const SPEC_FIELDS = [
@@ -2164,6 +2281,39 @@ document.getElementById('auth-modal').addEventListener('click',e=>{if(e.target==
 document.getElementById('upload-choice').addEventListener('click',e=>{if(e.target===e.currentTarget)closeUploadChoice();});
 document.getElementById('logout-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
 document.getElementById('style-picker-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
+
+// ── INTERNAL CONFIRM DIALOG ──
+let _confirmCallback = null;
+let _confirmFromNotif = false;
+function showConfirm(text, onOk, title='Подтверждение', btnLabel='УДАЛИТЬ') {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-text').textContent = text;
+  const btn = document.getElementById('confirm-ok');
+  btn.textContent = btnLabel;
+  _confirmCallback = onOk;
+  btn.onclick = () => { closeConfirm(); onOk(); };
+  // Если открыта панель уведомлений — временно прячем её чтобы confirm был поверх
+  const notif = document.getElementById('notif-panel');
+  _confirmFromNotif = notif && notif.style.display !== 'none';
+  if (_confirmFromNotif) notif.style.display = 'none';
+  const m = document.getElementById('confirm-modal');
+  m.style.display = 'flex';
+}
+function closeConfirm() {
+  document.getElementById('confirm-modal').style.display = 'none';
+  _confirmCallback = null;
+  // Восстанавливаем панель уведомлений если она была открыта
+  if (_confirmFromNotif) {
+    document.getElementById('notif-panel').style.display = 'block';
+    _confirmFromNotif = false;
+  }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('confirm-modal')?.addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeConfirm();
+  });
+});
+
 </script>
 
 <!-- EMAIL MODAL -->
@@ -2251,19 +2401,31 @@ document.getElementById('style-picker-modal').addEventListener('click',e=>{if(e.
 <!-- BIKE INFO EDIT MODAL -->
 <div class="modal-overlay" id="bike-edit-modal">
   <div class="modal-sheet">
-    <div class="modal-title">Редактировать байк</div>
-    <div class="modal-sub">Исправьте название мотоцикла или обновите заводское фото</div>
-    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Название мотоцикла</div>
+    <div class="modal-title">Редактировать профиль</div>
+    <div class="modal-sub">Измените своё имя или название мотоцикла</div>
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Ваше имя</div>
+    <input class="field" id="rider-name-input" placeholder="Имя Фамилия">
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;margin-top:6px">Название мотоцикла</div>
     <input class="field" id="bike-name-input" placeholder="Например: Triumph Bonneville T100 2022">
-    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;margin-top:6px">Заводское фото (URL)</div>
-    <input class="field" id="bike-photo-input" placeholder="https://... (ссылка на фото)">
-    <div style="margin-bottom:10px">
-      <button onclick="uploadFactoryPhoto()" style="width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer">
-        📷 Или загрузить фото с устройства
-      </button>
-    </div>
     <button class="modal-btn" onclick="saveBikeInfo()">СОХРАНИТЬ</button>
     <button class="modal-btn ghost" onclick="document.getElementById('bike-edit-modal').classList.remove('open')">Отмена</button>
+  </div>
+</div>
+
+<!-- FACTORY PHOTO EDIT MODAL -->
+<div class="modal-overlay" id="factory-photo-modal">
+  <div class="modal-sheet">
+    <div class="modal-title">Заводское фото байка</div>
+    <div class="modal-sub">Вставьте ссылку на фото или загрузите с устройства</div>
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Ссылка на фото (URL)</div>
+    <input class="field" id="bike-photo-input" placeholder="https://... (ссылка на фото)">
+    <div style="margin-bottom:10px">
+      <button onclick="document.getElementById('factory-photo-modal').classList.remove('open');uploadFactoryPhoto()" style="width:100%;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer">
+        📷 Загрузить фото с устройства
+      </button>
+    </div>
+    <button class="modal-btn" onclick="saveFactoryPhoto()">СОХРАНИТЬ ССЫЛКУ</button>
+    <button class="modal-btn ghost" onclick="document.getElementById('factory-photo-modal').classList.remove('open')">Отмена</button>
   </div>
 </div>
 
@@ -2391,6 +2553,16 @@ document.getElementById('style-picker-modal').addEventListener('click',e=>{if(e.
       <button class="modal-btn" onclick="authChoiceSubmitParticipant()">ВОЙТИ КАК УЧАСТНИК</button>
       <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="authChoiceBackToMain()">← Назад</button>
     </div>
+  </div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div id="confirm-modal" onclick="if(event.target===this)closeConfirm()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;align-items:flex-end;justify-content:center;max-width:480px;margin:0 auto">
+  <div class="modal-sheet" style="padding-bottom:28px;width:100%">
+    <div class="modal-title" id="confirm-title" style="font-size:22px">Подтверждение</div>
+    <div class="modal-sub" id="confirm-text" style="font-size:14px;margin-bottom:20px"></div>
+    <button class="modal-btn" id="confirm-ok" style="background:#e53935;margin-bottom:8px">УДАЛИТЬ</button>
+    <button class="modal-btn ghost" onclick="closeConfirm()">Отмена</button>
   </div>
 </div>
 </body>
