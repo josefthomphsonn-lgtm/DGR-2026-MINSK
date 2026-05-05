@@ -88,7 +88,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .contest-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 4px; }
 .contest-slot { background: var(--card); border: 1.5px dashed var(--border); border-radius: 12px; aspect-ratio: 4/3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer; overflow: hidden; position: relative; }
 .contest-slot.has-photo { border-style: solid; border-color: var(--gold); }
-.contest-slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.contest-slot > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .contest-slot-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.6); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; opacity: 0; transition: opacity .2s; }
 .contest-slot.has-photo:active .contest-slot-overlay { opacity: 1; }
 .contest-slot-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); }
