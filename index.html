@@ -148,6 +148,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 .nav-icon { font-size: 20px; display:flex; align-items:center; justify-content:center; height:28px; width:28px; line-height:1; }
 .nav-icon svg, .nav-icon img { width: 100%; height: 100%; display: block; object-fit: contain; }
 .nav-icon img.nav-head { border-radius: 50%; object-fit: cover; border: 1.5px solid currentColor; }
+.nav-item img.nav-head { filter: grayscale(1) brightness(1.2) opacity(0.5); }
+.nav-item.active img.nav-head { filter: none; }
 /* Bump bike + bowtie raster icons (they have built-in padding in viewBox) */
 /* Header logo SVG — uses same scale tricks for bike/bowtie */
 #header-logo-svg img { display: block; width: 24px; height: 24px; object-fit: contain; }
@@ -156,6 +158,8 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 #header-logo-svg img.nav-bike, #header-logo-svg img.nav-bowtie { transform: scale(1.8); }
 /* Bottom nav: bump bike + bowtie raster icons (their viewBox has padding) */
 .nav-icon img.nav-bike, .nav-icon img.nav-bowtie { transform: scale(1.5); }
+.nav-item img.nav-bike, .nav-item img.nav-bowtie { filter: grayscale(1) brightness(1.2) opacity(0.5); }
+.nav-item.active img.nav-bike, .nav-item.active img.nav-bowtie { filter: none; }
 .nav-icon svg .stroke { stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .nav-icon svg .fill { fill: currentColor; }
 .icon-yellow { color: var(--gold); }
@@ -248,11 +252,20 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
       <div class="modal-err" id="code-err">Email или код не найден. Проверьте и попробуйте снова.</div>
       <button class="modal-btn" onclick="loginWithCode()">ВОЙТИ КАК УЧАСТНИК</button>
       <div class="divider">или</div>
-      <div style="display:flex;gap:10px">
-        <button class="modal-btn ghost" style="flex:1;font-size:12px" onclick="showGuestForm()">👁 Гость</button>
-        <button class="modal-btn ghost" style="flex:1;font-size:12px;border-color:var(--gold);color:var(--gold)" onclick="showPhotographerForm()">📷 Фотограф</button>
+      <div style="display:flex;gap:10px;margin-bottom:8px">
+        <button onclick="showGuestForm()" style="flex:1;border:1px solid var(--border);border-radius:10px;padding:10px 8px;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;font-family:'Inter',sans-serif">
+          <span style="font-size:13px;font-weight:700;color:var(--text)">👁 Гость</span>
+          <span style="font-size:10px;color:var(--muted);line-height:1.3;text-align:center">Просмотр, лайки и комментарии</span>
+        </button>
+        <button onclick="showPhotographerForm()" style="flex:1;border:1px solid var(--border);border-radius:10px;padding:10px 8px;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;font-family:'Inter',sans-serif">
+          <span style="font-size:13px;font-weight:700;color:var(--gold)">📷 Фотограф</span>
+          <span style="font-size:10px;color:var(--muted);line-height:1.3;text-align:center">Загрузка фото в галерею + права гостя</span>
+        </button>
       </div>
-      <button class="modal-btn ghost" onclick="enterViewOnly()" style="font-size:11px;padding:9px;margin-top:6px;color:var(--muted);border-color:var(--border);width:100%">👁 Только просмотр страниц</button>
+      <button onclick="enterViewOnly()" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:10px 8px;background:none;cursor:pointer;font-family:'Inter',sans-serif;display:flex;flex-direction:column;align-items:center;gap:4px">
+        <span style="font-size:12px;font-weight:700;color:var(--muted)">👀 Зритель</span>
+        <span style="font-size:10px;color:var(--muted);line-height:1.3">Только просмотр страниц</span>
+      </button>
       <div style="text-align:center;margin-top:12px;font-size:10px;color:var(--border)">Для входа администратора введите код доступа выше</div>
     </div>
     <div class="modal-section" id="auth-guest" style="display:none">
@@ -320,8 +333,9 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
     <div class="modal-err" id="modal-err">Email или код не найден</div>
     <button class="modal-btn" onclick="modalLogin()">ВОЙТИ КАК УЧАСТНИК</button>
     <div class="divider">или</div>
-    <div id="modal-guest-toggle" style="margin-bottom:8px">
+    <div id="modal-guest-toggle" style="margin-bottom:4px">
       <button class="modal-btn ghost" style="font-size:12px;width:100%" onclick="document.getElementById('modal-guest-form').style.display='block';document.getElementById('modal-guest-toggle').style.display='none'">👁 Войти как гость</button>
+      <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:8px;line-height:1.4">Просмотр, лайки и комментарии</div>
     </div>
     <div id="modal-guest-form" style="display:none">
       <input class="field" id="modal-guest-email" placeholder="Ваш email" type="email" inputmode="email" style="margin-top:0">
@@ -331,6 +345,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
     </div>
     <div id="modal-photo-toggle">
       <button class="modal-btn ghost" style="font-size:12px;width:100%" onclick="document.getElementById('modal-photographer-form').style.display='block';document.getElementById('modal-photo-toggle').style.display='none'">📷 Войти как фотограф</button>
+      <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:8px;line-height:1.4">Загрузка фото в галерею + права гостя</div>
     </div>
     <div id="modal-photographer-form" style="display:none">
       <input class="field" id="modal-photographer-name" placeholder="Ваше имя / псевдоним" style="margin-top:0">
@@ -338,6 +353,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
       <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="document.getElementById('modal-photographer-form').style.display='none';document.getElementById('modal-photo-toggle').style.display='block'">← Назад</button>
     </div>
     <button class="modal-btn ghost" onclick="closeAuthModal()" style="margin-top:4px">Отмена</button>
+    <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:6px;line-height:1.4">👀 Зритель — закройте окно для просмотра без входа</div>
   </div>
 </div>
 
@@ -350,10 +366,22 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
     <div class="lightbox-name" id="lb-name"></div>
     <div class="lightbox-sub" id="lb-sub"></div>
   </div>
-  <div class="lightbox-actions">
-    <a class="lightbox-btn" id="lb-dl" href="#" target="_blank">⬇ Скачать</a>
-    <button class="lightbox-btn" id="lb-save" onclick="saveToPersonal()">📁 В коллекцию</button>
-    <button class="lightbox-btn" id="lb-delete" onclick="deleteMyPhoto()" style="display:none;color:#ff5555;border-color:#ff5555">🗑 Удалить</button>
+  <div class="lightbox-actions" style="flex-direction:column;gap:8px">
+    <div id="lb-btns" style="display:flex;gap:8px;width:100%;flex-wrap:wrap">
+      <a id="lb-dl" href="#" download style="display:none;flex:1;min-width:100px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;align-items:center;justify-content:center">⬇ Скачать</a>
+      <button id="lb-save" onclick="lbBtnAction(this,saveToPersonal)" style="display:none;flex:1;min-width:100px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer">★ В избранное</button>
+      <button id="lb-remove-col" onclick="lbBtnAction(this,removeFromCollection)" style="display:none;flex:1;min-width:100px;background:var(--card);border:1px solid var(--gold);color:var(--gold);border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer">★ Убрать из избранного</button>
+      <button id="lb-update" onclick="lbUpdateContestPhoto()" style="display:none;flex:1;min-width:100px;background:var(--card);border:1px solid var(--gold);color:var(--gold);border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer">📷 Обновить фото</button>
+      <button id="lb-delete" onclick="showLbDeleteConfirm('delete')" style="display:none;flex:1;min-width:100px;background:var(--card);border:1px solid #e53935;color:#ff5555;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer">🗑 Удалить</button>
+      <button id="lb-delete-all" onclick="showLbDeleteConfirm('deleteAll')" style="display:none;flex:1;min-width:100px;background:var(--card);border:1px solid #e53935;color:#ff5555;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer">🗑 Удалить везде</button>
+    </div>
+    <div id="lb-delete-confirm" style="display:none;background:#1a0000;border:1.5px solid #e53935;border-radius:12px;padding:12px;width:100%">
+      <div id="lb-confirm-text" style="font-size:13px;font-weight:600;margin-bottom:10px;color:white">Удалить фото?</div>
+      <div style="display:flex;gap:8px">
+        <button id="lb-confirm-ok" style="flex:1;background:#e53935;color:white;border:none;border-radius:8px;padding:8px;font-weight:700;font-size:12px;cursor:pointer">Удалить</button>
+        <button onclick="document.getElementById('lb-delete-confirm').style.display='none'" style="flex:1;background:none;border:1px solid #555;color:#aaa;border-radius:8px;padding:8px;font-weight:700;font-size:12px;cursor:pointer">Отмена</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -370,8 +398,14 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
 <div class="modal-overlay" id="photo-link-modal">
   <div class="modal-sheet">
     <div class="modal-title">Добавить по ссылке</div>
-    <div class="modal-sub">Вставьте прямую ссылку на фото (jpg, png, webp)</div>
-    <input class="field" id="photo-link-input" placeholder="https://example.com/photo.jpg" type="url">
+    <div class="modal-sub">Вставьте прямую ссылку на фото или ссылку на папку/облако</div>
+    <input class="field" id="photo-link-input" placeholder="https://example.com/photo.jpg или ссылка на папку" type="url">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);cursor:pointer">
+        <input type="checkbox" id="photo-link-is-folder" style="accent-color:var(--gold);width:16px;height:16px">
+        Ссылка на папку/облако (не фото)
+      </label>
+    </div>
     <div class="modal-err" id="photo-link-err">Некорректная ссылка</div>
     <button class="modal-btn" onclick="submitPhotoLink()">ДОБАВИТЬ</button>
     <button class="modal-btn ghost" onclick="document.getElementById('photo-link-modal').classList.remove('open')">Отмена</button>
@@ -550,6 +584,29 @@ function getPartners() {
 }
 function savePartners(list) { localStorage.setItem('dgr_partners', JSON.stringify(list)); }
 
+function getEventDetails() {
+  const def = {date:'май 2026', place:'Минск, Беларусь', dresscode:'джентльменский стиль — твид, костюм, классика', goal:'поддержка благотворительных программ и сообщества классических мотоциклов'};
+  return JSON.parse(localStorage.getItem('dgr_event_details') || JSON.stringify(def));
+}
+function openEditEventDetails() {
+  const d = getEventDetails();
+  document.getElementById('event-date-input').value = d.date;
+  document.getElementById('event-place-input').value = d.place;
+  document.getElementById('event-dresscode-input').value = d.dresscode;
+  document.getElementById('event-goal-input').value = d.goal;
+  document.getElementById('event-details-modal').classList.add('open');
+}
+function saveEventDetails() {
+  const d = {
+    date: document.getElementById('event-date-input').value.trim(),
+    place: document.getElementById('event-place-input').value.trim(),
+    dresscode: document.getElementById('event-dresscode-input').value.trim(),
+    goal: document.getElementById('event-goal-input').value.trim(),
+  };
+  localStorage.setItem('dgr_event_details', JSON.stringify(d));
+  document.getElementById('event-details-modal').classList.remove('open');
+  renderEvent();
+}
 function getAboutText() {
   return localStorage.getItem('dgr_about_text') || 'Ежегодный заезд джентльменов на классических и винтажных мотоциклах. Мы собираемся, чтобы поддержать программы здоровья мужчин и помочь детям, оставшимся без попечения родителей.';
 }
@@ -586,13 +643,15 @@ function renderEvent() {
 
     <div class="section-title" style="margin-top:0;display:flex;align-items:center;justify-content:space-between">
       <span>О мероприятии</span>
-      ${canEdit ? `<button onclick="openEditAboutText()" style="background:none;border:1px solid var(--border);color:var(--gold);border-radius:8px;padding:4px 10px;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer">✏ Редактировать</button>` : ''}
+      ${canEdit ? `<button onclick="openEditEventDetails()" style="background:none;border:1px solid var(--border);color:var(--gold);border-radius:8px;padding:4px 10px;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer">✏ Редактировать</button>` : ''}
     </div>
     <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:13px;line-height:1.6;color:var(--text)">
-      <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start">${svgIcon('calendar','icon-yellow',22)}<div><b>Дата:</b> май 2026</div></div>
-      <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start">${svgIcon('pin','icon-yellow',22)}<div><b>Место:</b> Минск, Беларусь</div></div>
-      <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start">${svgIcon('bike','icon-yellow',22)}<div><b>Дресс-код:</b> джентльменский стиль — твид, костюм, классика</div></div>
-      <div style="display:flex;gap:12px;align-items:flex-start">${svgIcon('target','icon-yellow',22)}<div><b>Цель:</b> поддержка благотворительных программ и сообщества классических мотоциклов</div></div>
+      ${(()=>{const d=getEventDetails();return `
+      <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start">${svgIcon('calendar','icon-yellow',22)}<div><b>Дата:</b> ${d.date}</div></div>
+      <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start">${svgIcon('pin','icon-yellow',22)}<div><b>Место:</b> ${d.place}</div></div>
+      <div style="display:flex;gap:12px;margin-bottom:12px;align-items:flex-start">${svgIcon('bike','icon-yellow',22)}<div><b>Дресс-код:</b> ${d.dresscode}</div></div>
+      <div style="display:flex;gap:12px;align-items:flex-start">${svgIcon('target','icon-yellow',22)}<div><b>Цель:</b> ${d.goal}</div></div>
+      `})()}
     </div>
 
     <div class="section-title" style="display:flex;align-items:center;justify-content:space-between">
@@ -749,14 +808,126 @@ function hideGuestForm() {
   document.getElementById('auth-guest').style.display = 'none';
   document.getElementById('auth-code').style.display = 'block';
 }
-function submitGuestLogin() {
-  const email = document.getElementById('guest-email').value.trim();
-  if (!email || !email.includes('@')) { document.getElementById('guest-err').style.display='block'; return; }
-  const name = email.split('@')[0];
-  currentUser = { name, email, row:0, isGuest:true, data:null };
-  localStorage.setItem('dgr_user', JSON.stringify(currentUser));
-  loadData().then(showApp);
+function checkEmailRegistered(email) {
+  const em = email.toLowerCase();
+  // Проверяем участников (включая привязанный email)
+  // Ищем email в нескольких возможных полях
+  const participant = participants.find(p => {
+    const fields = ['email', 'Email', 'EMAIL', 'e-mail', 'E-mail'];
+    return fields.some(f => p[f] && String(p[f]).toLowerCase() === em);
+  });
+  if (participant) return { role: 'participant', name: participant['ФИО'] };
+  // Проверяем одобренных фотографов
+  const approved = JSON.parse(localStorage.getItem('dgr_approved_photographers') || '[]');
+  const photographer = approved.find(p => p.email && p.email.toLowerCase() === em);
+  if (photographer) return { role: 'photographer', name: photographer.name };
+  // Проверяем localStorage
+  const saved = JSON.parse(localStorage.getItem('dgr_user') || 'null');
+  if (saved && saved.email && saved.email.toLowerCase() === em) {
+    if (saved.isGuest) return { role: 'guest', name: saved.name };
+    if (saved.isPhotographer) return { role: 'photographer', name: saved.name };
+    return { role: 'participant', name: saved.name };
+  }
+  return null;
 }
+
+function emailRegisteredMsg(info) {
+  const labels = { participant: 'участник', guest: 'гость', photographer: 'фотограф' };
+  return `Этот email уже зарегистрирован как ${labels[info.role] || info.role}${info.name ? ' (' + info.name + ')' : ''}`;
+}
+async function sendGuestCode() {
+  const name = document.getElementById('guest-name').value.trim();
+  const email = document.getElementById('guest-email').value.trim();
+  const errEl = document.getElementById('guest-err');
+  if (!name) { errEl.textContent='Введите ваше имя'; errEl.style.display='block'; return; }
+  if (!email || !email.includes('@')) { errEl.textContent='Введите корректный email'; errEl.style.display='block'; return; }
+  errEl.style.display='none';
+  // Проверить не занят ли email участником
+  try {
+    const res = await apiPost({action:'login', code: email});
+    if (res && res.success && res.participant) {
+      const p = res.participant;
+      const role = p['admin'] ? 'администратор' : 'участник';
+      errEl.textContent = `Этот email уже зарегистрирован как ${role} (${p['ФИО']||''})`;
+      errEl.style.display = 'block';
+      return;
+    }
+  } catch(e) {}
+  // Отправить код
+  const btn = document.querySelector('#guest-step-email .modal-btn');
+  if(btn) { btn.disabled=true; btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle"></span>'; }
+  try {
+    const res = await apiPost({action:'sendVerificationCode', email});
+    if (res && res.error) { errEl.textContent=res.error; errEl.style.display='block'; if(btn){btn.disabled=false;btn.innerHTML='ПОЛУЧИТЬ КОД';} return; }
+    document.getElementById('guest-email-display').textContent = email;
+    document.getElementById('guest-step-email').style.display='none';
+    document.getElementById('guest-step-code').style.display='block';
+    document.getElementById('guest-code').value='';
+    document.getElementById('guest-code-err').style.display='none';
+  } catch(e) { errEl.textContent='Ошибка отправки. Попробуйте ещё раз.'; errEl.style.display='block'; }
+  if(btn){btn.disabled=false;btn.innerHTML='ПОЛУЧИТЬ КОД';}
+}
+
+async function verifyGuestCode() {
+  const email = document.getElementById('guest-email').value.trim();
+  const code = document.getElementById('guest-code').value.trim();
+  const errEl = document.getElementById('guest-code-err');
+  if (!code || code.length < 6) { errEl.textContent='Введите 6-значный код'; errEl.style.display='block'; return; }
+  errEl.style.display='none';
+  const btn = document.querySelector('#guest-step-code .modal-btn');
+  if(btn) { btn.disabled=true; btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle"></span>'; }
+  try {
+    const res = await apiPost({action:'verifyCode', email, code});
+    if (res && res.error) { errEl.textContent=res.error; errEl.style.display='block'; if(btn){btn.disabled=false;btn.innerHTML='ВОЙТИ';} return; }
+    const guestName = document.getElementById('guest-name').value.trim() || email.split('@')[0];
+    currentUser = { name: guestName, email, row:0, isGuest:true, data:null };
+    localStorage.setItem('dgr_user', JSON.stringify(currentUser));
+    loadData().then(showApp);
+  } catch(e) { errEl.textContent='Ошибка. Попробуйте ещё раз.'; errEl.style.display='block'; if(btn){btn.disabled=false;btn.innerHTML='ВОЙТИ';} }
+}
+
+async function sendPhotographerCode() {
+  const name = document.getElementById('photographer-name').value.trim();
+  const email = document.getElementById('photographer-email').value.trim();
+  const errEl = document.getElementById('photographer-err');
+  if (!name || !email || !email.includes('@')) { errEl.textContent='Заполните имя и email'; errEl.style.display='block'; return; }
+  errEl.style.display='none';
+  const btn = document.querySelector('#photo-step-email .modal-btn');
+  if(btn) { btn.disabled=true; btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle"></span>'; }
+  try {
+    const res = await apiPost({action:'sendVerificationCode', email});
+    if (res && res.error) { errEl.textContent=res.error; errEl.style.display='block'; if(btn){btn.disabled=false;btn.innerHTML='ПОЛУЧИТЬ КОД';} return; }
+    document.getElementById('photo-email-display').textContent = email;
+    document.getElementById('photo-step-email').style.display='none';
+    document.getElementById('photo-step-code').style.display='block';
+    document.getElementById('photo-code').value='';
+    document.getElementById('photo-code-err').style.display='none';
+  } catch(e) { errEl.textContent='Ошибка отправки. Попробуйте ещё раз.'; errEl.style.display='block'; }
+  if(btn){btn.disabled=false;btn.innerHTML='ПОЛУЧИТЬ КОД';}
+}
+
+async function verifyPhotographerCode() {
+  const name = document.getElementById('photographer-name').value.trim();
+  const email = document.getElementById('photographer-email').value.trim();
+  const code = document.getElementById('photo-code').value.trim();
+  const errEl = document.getElementById('photo-code-err');
+  if (!code || code.length < 6) { errEl.textContent='Введите 6-значный код'; errEl.style.display='block'; return; }
+  errEl.style.display='none';
+  const btn = document.querySelector('#photo-step-code .modal-btn');
+  if(btn) { btn.disabled=true; btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle"></span>'; }
+  try {
+    const res = await apiPost({action:'verifyCode', email, code});
+    if (res && res.error) { errEl.textContent=res.error; errEl.style.display='block'; if(btn){btn.disabled=false;btn.innerHTML='ВОЙТИ КАК ФОТОГРАФ';} return; }
+    // Проверить одобрен ли фотограф
+    const approved = JSON.parse(localStorage.getItem('dgr_approved_photographers')||'[]');
+    const isApproved = approved.find(p=>p.email&&p.email.toLowerCase()===email.toLowerCase());
+    currentUser = { name: name||email.split('@')[0], email, row:0, isGuest:false, isPhotographer:true, isApprovedPhotographer:!!isApproved, data:null };
+    localStorage.setItem('dgr_user', JSON.stringify(currentUser));
+    loadData().then(showApp);
+  } catch(e) { errEl.textContent='Ошибка. Попробуйте ещё раз.'; errEl.style.display='block'; if(btn){btn.disabled=false;btn.innerHTML='ВОЙТИ КАК ФОТОГРАФ';} }
+}
+
+async function submitGuestLogin() { sendGuestCode(); }
 function enterViewOnly() {
   currentUser = null;
   localStorage.removeItem('dgr_user');
@@ -764,6 +935,10 @@ function enterViewOnly() {
 }
 async function modalLoginAsGuest() {
   const email = document.getElementById('modal-guest-email').value.trim();
+  if (email && email.includes('@')) {
+    const existing = checkEmailRegistered(email);
+    if (existing) { const e=document.getElementById('modal-guest-err'); e.textContent=emailRegisteredMsg(existing); e.style.display='block'; return; }
+  }
   if (!email || !email.includes('@')) { document.getElementById('modal-guest-err').style.display='block'; return; }
   const name = email.split('@')[0];
   currentUser = { name, email, row:0, isGuest:true, data:null };
@@ -808,7 +983,11 @@ function goToStartScreen() {
 }
 async function authChoiceSubmitGuest() {
   const email = document.getElementById('auth-choice-email').value.trim();
-  if (!email || !email.includes('@')) { document.getElementById('auth-choice-err').style.display='block'; return; }
+  const errEl2 = document.getElementById('auth-choice-err');
+  if (!email || !email.includes('@')) { errEl2.textContent='Введите корректный email'; errEl2.style.display='block'; return; }
+  errEl2.style.display='none';
+  const existing = checkEmailRegistered(email);
+  if (existing) { errEl2.textContent=emailRegisteredMsg(existing); errEl2.style.display='block'; return; }
   const name = email.split('@')[0];
   currentUser = { name, email, row:0, isGuest:true, data:null };
   localStorage.setItem('dgr_user', JSON.stringify(currentUser));
@@ -823,7 +1002,7 @@ async function authChoiceSubmitParticipant() {
     const d = await apiPost({action:'login', code});
     if (!d||!d.participant) throw new Error();
     const isAdminUser = Object.entries(d.participant).some(([k,v]) => k.toLowerCase().includes('admin') && v && v!=='0' && String(v).toUpperCase()!=='FALSE');
-    currentUser = { name: isAdminUser ? 'Администратор' : d.participant['ФИО'], row:d.participant._row, isGuest:false, isAdmin:isAdminUser, data:d.participant };
+    currentUser = { name: d.participant['ФИО'] || 'Администратор', row:d.participant._row, isGuest:false, isAdmin:isAdminUser, data:d.participant };
     localStorage.setItem('dgr_user', JSON.stringify(currentUser));
     closeAuthChoice();
     await loadData(); updateUserDisplay(); renderAll();
@@ -956,15 +1135,23 @@ function choiceByLink() {
 
 async function submitPhotoLink() {
   const url = document.getElementById('photo-link-input').value.trim();
+  const isFolder = document.getElementById('photo-link-is-folder').checked;
   if (!url || !url.startsWith('http')) { document.getElementById('photo-link-err').style.display='block'; return; }
   document.getElementById('photo-link-modal').classList.remove('open');
-  showLoad(true);
-  try {
-    await apiPost({action:'addGalleryPhoto', owner_row_id: currentUser.row||0, owner_name: currentUser.name, photo_url: url, type:'gallery'});
-    toast('Фото добавлено в галерею!');
-    await loadData(); renderGallery();
-  } catch(e) { toast('Ошибка. Проверьте ссылку.'); }
-  showLoad(false);
+  // Для папок — всегда в галерею
+  if (isFolder) {
+    showLoad(true);
+    try {
+      const photoUrl = '__FOLDER__' + url;
+      await apiPost({action:'addGalleryPhoto', owner_row_id: currentUser.row||0, owner_name: (currentUser.data&&currentUser.data['ФИО'])||currentUser.name, photo_url: photoUrl, type:'gallery'});
+      toast('Ссылка на папку добавлена!');
+      await loadData(); renderGallery();
+    } catch(e) { toast('Ошибка. Проверьте ссылку.'); }
+    showLoad(false);
+  } else {
+    // Переиспользуем savePhoto с текущим uploadCtx
+    await savePhoto(url);
+  }
 }
 
 async function modalLogin() {
@@ -974,7 +1161,7 @@ async function modalLogin() {
   const d = await api({action:'login', code});
   if (d.error) { document.getElementById('modal-err').style.display='block'; showLoad(false); return; }
   const isAdminUser = Object.entries(d.participant).some(([k,v]) => k.toLowerCase().includes('admin') && v && v!=='0' && String(v).toUpperCase()!=='FALSE');
-  currentUser = { name: isAdminUser ? 'Администратор' : d.participant['ФИО'], row: d.participant._row, isGuest: false, isAdmin: isAdminUser, data: d.participant };
+  currentUser = { name: d.participant['ФИО'] || 'Администратор', row: d.participant._row, isGuest: false, isAdmin: isAdminUser, data: d.participant };
   localStorage.setItem('dgr_user', JSON.stringify(currentUser));
   closeAuthModal(); await loadData(); updateUserDisplay(); renderAll();
   toast('Добро пожаловать, ' + currentUser.name.split(' ')[0] + '!');
@@ -1132,7 +1319,7 @@ function renderTopBike() {
       <div class="top-header-sub" style="margin-top:0">Голосование за лучший мотоцикл</div>
       <div class="votes-left">${isParticipant ? `Голосов осталось: ${Math.max(0,3-myVoted.length)} из 3` : 'Войдите как участник чтобы голосовать'}</div>
     </div>
-    ${isParticipant&&!meHasPhoto ? `<div class="contest-slot" onclick="startUpload('contest_bike', 'bike')" style="margin-bottom:14px;aspect-ratio:auto;padding:20px;border-radius:12px;flex-direction:row;gap:12px">${svgIcon('bike','icon-yellow',32)}<div style="text-align:left"><div class="contest-slot-title" style="margin:0">Загрузить мою фотографию</div><div class="contest-slot-label" style="margin-top:2px;text-transform:none;letter-spacing:0">Конкурс ТОП Байк</div></div></div>` : ''}
+    ${isParticipant ? `<div class="contest-slot" onclick="startUpload('contest_bike', 'bike')" style="margin-bottom:14px;aspect-ratio:auto;padding:20px;border-radius:12px;flex-direction:row;gap:12px">${svgIcon('bike','icon-yellow',32)}<div style="text-align:left"><div class="contest-slot-title" style="margin:0">${meHasPhoto?'Обновить фото':'Загрузить мою фотографию'}</div><div class="contest-slot-label" style="margin-top:2px;text-transform:none;letter-spacing:0">Конкурс ТОП Байк</div></div></div>` : ''}
     ${withPhoto.length ? `<div class="top-grid">${withPhoto.map((p,i)=>topCard(p,i,'bike',myVoted)).join('')}</div>` : '<div class="empty">Пока никто не загрузил фото на конкурс</div>'}`;
 }
 function renderTopStyle() {
@@ -1145,7 +1332,7 @@ function renderTopStyle() {
       <div class="top-header-sub" style="margin-top:0">Голосование за лучший образ</div>
       <div class="votes-left">${isParticipant ? `Голосов осталось: ${Math.max(0,3-myVoted.length)} из 3` : 'Войдите как участник чтобы голосовать'}</div>
     </div>
-    ${isParticipant&&!meHasPhoto ? `<div class="contest-slot" onclick="startUpload('contest_style', 'style')" style="margin-bottom:14px;aspect-ratio:auto;padding:20px;border-radius:12px;flex-direction:row;gap:12px">${svgIcon('bowtie','icon-yellow',32)}<div style="text-align:left"><div class="contest-slot-title" style="margin:0">Загрузить мою фотографию</div><div class="contest-slot-label" style="margin-top:2px;text-transform:none;letter-spacing:0">Конкурс ТОП Стиль</div></div></div>` : ''}
+    ${isParticipant ? `<div class="contest-slot" onclick="startUpload('contest_style', 'style')" style="margin-bottom:14px;aspect-ratio:auto;padding:20px;border-radius:12px;flex-direction:row;gap:12px">${svgIcon('bowtie','icon-yellow',32)}<div style="text-align:left"><div class="contest-slot-title" style="margin:0">${meHasPhoto?'Обновить фото':'Загрузить мою фотографию'}</div><div class="contest-slot-label" style="margin-top:2px;text-transform:none;letter-spacing:0">Конкурс ТОП Стиль</div></div></div>` : ''}
     ${withPhoto.length ? `<div class="top-grid">${withPhoto.map((p,i)=>topCard(p,i,'style',myVoted)).join('')}</div>` : '<div class="empty">Пока никто не загрузил фото на конкурс</div>'}`;
 }
 function topCard(p,i,type,myVoted) {
@@ -1155,7 +1342,7 @@ function topCard(p,i,type,myVoted) {
   const isMe = currentUser&&!currentUser.isGuest&&currentUser.row==p._row;
   const rc = i<3?`r${i+1}`:'';
   return `<div class="top-card">
-    <div class="top-card-img" onclick="openLbSingle('${photo}','${p['ФИО']}','${p['МОТОЦИКЛ']||''}')">
+    <div class="top-card-img" onclick="openLbSingle('${photo}','${p['ФИО']}','${p['МОТОЦИКЛ']||''}',null,'top')">
       ${photo?`<img src="${px(photo)}" loading="lazy">`:`<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;opacity:.35">${svgIcon('bike','icon-yellow',72)}</span>`}
       ${i<3?`<div class="top-card-rank ${rc}">${i+1}</div>`:''}
     </div>
@@ -1228,10 +1415,18 @@ function renderGallery() {
 
   el.innerHTML = uploadBtn + sortBar + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${sorted.map((ph,i)=>`
     <div style="background:var(--card);border-radius:12px;overflow:hidden;border:1px solid var(--border)">
-      <div class="gallery-item" style="aspect-ratio:1;border-radius:0" onclick="openLb(${i})">
-        <img src="${px(ph.photo_url)}" loading="lazy" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover">
-        <div class="gallery-owner">${ph.owner_name||''}</div>
-      </div>
+      ${ph.photo_url.startsWith('__FOLDER__') ? `
+        <div style="aspect-ratio:1;border-radius:0;position:relative;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px;cursor:pointer" onclick="window.open('${ph.photo_url.slice(10)}','_blank')">
+          <div style="font-size:32px">📁</div>
+          <div style="font-size:11px;font-weight:700;color:var(--gold);text-align:center;word-break:break-all;line-height:1.3">${ph.owner_name||''}</div>
+          <div style="font-size:9px;color:var(--muted);text-align:center">Нажмите чтобы открыть</div>
+          ${currentUser&&!currentUser.isGuest&&String(ph.owner_row_id)===String(currentUser.row)?'<div style="position:absolute;top:6px;left:6px;background:var(--gold);color:var(--black);font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;letter-spacing:.5px">МОЁ</div>':''}
+        </div>` : `
+        <div class="gallery-item" style="aspect-ratio:1;border-radius:0;position:relative" onclick="openLb(${i})">
+          <img src="${px(ph.photo_url)}" loading="lazy" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:cover">
+          <div class="gallery-owner">${ph.owner_name||''}</div>
+          ${currentUser&&!currentUser.isGuest&&String(ph.owner_row_id)===String(currentUser.row)?'<div style="position:absolute;top:6px;left:6px;background:var(--gold);color:var(--black);font-size:8px;font-weight:800;padding:2px 6px;border-radius:4px;letter-spacing:.5px;pointer-events:none">МОЁ</div>':''}
+        </div>`}
       <div style="padding:6px 8px">${reactionsBar(ph.photo_url, ph.owner_row_id||0)}</div>
     </div>`).join('')}</div>`;
 }
@@ -1261,7 +1456,7 @@ function openDetail(row) {
     <div class="detail-body" style="padding-top:16px">
       <div class="detail-header">
         <div class="portrait-wrap">
-          <div class="portrait">${portrait?`<img src="${px(portrait)}">`:'<span style="font-size:26px;color:var(--muted)">👤</span>'}</div>
+          <div class="portrait" ${portrait?'onclick="openPortrait(this)"':''}  data-url="${portrait}" data-name="${p['ФИО']}" style="${portrait?'cursor:pointer':''}">${portrait?`<img src="${px(portrait)}">`:'<span style="font-size:26px;color:var(--muted)">👤</span>'}</div>
           ${isMe?`<button class="portrait-edit" onclick="startUpload('portrait')">📷</button>`:''}
         </div>
         <div style="flex:1">
@@ -1270,7 +1465,7 @@ function openDetail(row) {
             <div class="detail-bike-name">${p['МОТОЦИКЛ']||'Мотоцикл не указан'}</div>
             ${isMe?`<button onclick="editBikeInfo()" style="background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:2px" title="Редактировать">✏️</button>`:''}
           </div>
-          ${isMe ? `<div style="font-size:11px;color:var(--muted);margin-top:6px">${p['email']?'📧 '+p['email']:'<span style="color:var(--gold);cursor:pointer" onclick="openEmailModal()">+ Привязать email</span>'}</div>` : ''}
+          ${isMe ? `<div style="font-size:11px;color:var(--muted);margin-top:6px">${(p['email']||p['Email']||p['EMAIL'])?'📧 '+(p['email']||p['Email']||p['EMAIL']):'<span style="color:var(--gold);cursor:pointer" onclick="openEmailModal()">+ Привязать email</span>'}</div>` : ''}
         </div>
         ${isMe ? `<button onclick="logout()" title="Выйти" style="flex-shrink:0;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:6px 10px;font-family:'Inter',sans-serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;align-self:flex-start">↪ Выход</button>` : ''}
       </div>
@@ -1292,12 +1487,12 @@ function openDetail(row) {
 
       <div class="section-title">Конкурсные фото</div>
       <div class="contest-slots">
-        <div class="contest-slot${cb?' has-photo':''}" onclick="${isMe?`startUpload('contest_bike')`:cb?`openLbSingle('${cb}','${p['ФИО']}','ТОП Байк')`:``}">
-          ${cb?`<img src="${px(cb)}"><div class="contest-slot-overlay"><span style="font-size:20px">✏</span><span style="font-size:11px;color:white">Изменить</span></div>`:''}
+        <div class="contest-slot${cb?' has-photo':''}" onclick="${isMe&&!cb?`startUpload('contest_bike')`:cb?`openLbSingle('${cb}','${p['ФИО']}','ТОП Байк','contest_bike')`:``}">
+          ${cb?`<img src="${px(cb)}"><div class="contest-slot-overlay"><span style="font-size:20px">✏</span><span style="font-size:11px;color:white">${isMe?'Нажмите чтобы изменить':''}</span></div>`:''}
           ${!cb?`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><div style="display:flex;align-items:center;gap:8px">${propIcon('bike',20)}<span class="contest-slot-label" style="margin:0">ТОП Байк</span></div>${isMe?`<span class="contest-slot-title">+ Загрузить</span>`:''}</div>`:''}
         </div>
-        <div class="contest-slot${cs?' has-photo':''}" onclick="${isMe?`startUpload('contest_style')`:cs?`openLbSingle('${cs}','${p['ФИО']}','ТОП Стиль')`:``}">
-          ${cs?`<img src="${px(cs)}"><div class="contest-slot-overlay"><span style="font-size:20px">✏</span><span style="font-size:11px;color:white">Изменить</span></div>`:''}
+        <div class="contest-slot${cs?' has-photo':''}" onclick="${isMe&&!cs?`startUpload('contest_style')`:cs?`openLbSingle('${cs}','${p['ФИО']}','ТОП Стиль','contest_style')`:``}">
+          ${cs?`<img src="${px(cs)}"><div class="contest-slot-overlay"><span style="font-size:20px">✏</span><span style="font-size:11px;color:white">${isMe?'Нажмите чтобы изменить':''}</span></div>`:''}
           ${!cs?`<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><div style="display:flex;align-items:center;gap:8px">${propIcon('bowtie',18)}<span class="contest-slot-label" style="margin:0">ТОП Стиль</span></div>${isMe?`<span class="contest-slot-title">+ Загрузить</span>`:''}</div>`:''}
         </div>
       </div>
@@ -1316,7 +1511,8 @@ function openDetail(row) {
       ${isMe ? `
         <textarea id="bike-story-area" 
           onblur="saveBikeStory(this.value)"
-          style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;line-height:1.5;outline:none;resize:vertical;min-height:48px;max-height:200px"
+          oninput="this.style.height='auto';if(this.scrollHeight>this.clientHeight)this.style.height=(this.scrollHeight*1.5)+'px'"
+          style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px;color:var(--text);font-family:'Inter',sans-serif;font-size:13px;line-height:1.5;outline:none;resize:none;min-height:100px"
           placeholder="Расскажите историю вашего байка — как купили, что изменили, почему выбрали именно его..."
         >${p['bike_story']||''}</textarea>` 
         : p['bike_story'] ? `<div style="font-size:13px;color:var(--text);line-height:1.6;background:var(--card);border-radius:10px;padding:12px;border:1px solid var(--border)">${p['bike_story']}</div>`
@@ -1329,12 +1525,24 @@ function openDetail(row) {
       ${specs.length?`<div class="specs">${specs.map(([l,v])=>`<div class="spec-row"><span class="spec-label">${l}</span><span class="spec-value">${v}</span></div>`).join('')}</div>`:`<div style="font-size:12px;color:var(--muted);font-style:italic">${isMe?'Характеристики не указаны — нажмите «Редактировать», чтобы добавить':'Характеристики не указаны'}</div>`}
       ${infoUrl?`<a class="detail-btn secondary" href="${infoUrl}" target="_blank" style="margin-top:10px">🔗 Подробнее о модели байка</a>`:''}
 
-      <div class="section-title">Личная коллекция фото${isMe?` <span style="color:var(--muted);font-weight:400">(${purls.length}/20)</span>`:''}</div>
-      <div class="personal-gallery">
-        ${purls.map((url,i)=>`<div class="personal-gallery-item" onclick="openLbSingle('${url}','${p['ФИО']}','Галерея')"><img src="${px(url)}" loading="lazy"></div>`).join('')}
-        ${isMe?`<div class="personal-gallery-add" onclick="startUpload('personal_gallery')"><span style="font-size:20px">+</span><span>Добавить</span></div>`:''}
-        ${!purls.length&&!isMe?'<div style="color:var(--muted);font-size:12px;padding:10px">Нет фото</div>':''}
-      </div>
+      ${(()=>{
+        const myUploads2 = gallery.filter(ph => String(ph.owner_row_id) === String(p._row));
+        const lim2 = parseInt(p['photo_limit']) || 0;
+        const lt2 = lim2>0?` <span style="color:var(--muted);font-weight:400;font-size:12px">${myUploads2.length}/${lim2}</span>`:myUploads2.length?` <span style="color:var(--muted);font-weight:400;font-size:12px">${myUploads2.length}</span>`:'';
+        return `
+          <div class="section-title" style="margin-top:14px">Мои фото${lt2}</div>
+          <div class="personal-gallery">
+            ${myUploads2.map(ph=>`<div class="personal-gallery-item" onclick="openUploadedPhoto('${ph.photo_url}','${p['ФИО']}',${ph._row})"><img src="${px(ph.photo_url)}" loading="lazy"></div>`).join('')}
+            ${isMe?`<div class="personal-gallery-add" onclick="startUpload('personal_gallery')"><span style="font-size:20px">+</span><span>Загрузить</span></div>`:''}
+            ${!myUploads2.length&&!isMe?'<div style="color:var(--muted);font-size:12px;padding:10px;font-style:italic">Нет фото</div>':''}
+          </div>
+          <div class="section-title" style="margin-top:14px">Избранное</div>
+          <div class="personal-gallery">
+            ${purls.map((url,i)=>`<div class="personal-gallery-item" onclick="openPersonalPhoto('${url}','${p['ФИО']}')"><img src="${px(url)}" loading="lazy"></div>`).join('')}
+            ${isMe?`<div class="personal-gallery-add" onclick="openGalleryPickerForFav()"><span style="font-size:20px">★</span><span>Добавить</span></div>`:''}
+            ${!purls.length?`<div style="color:var(--muted);font-size:12px;padding:10px;font-style:italic">${isMe?'Выберите фото из галереи':'Нет избранного'}</div>`:''}
+          </div>`;
+      })()}
     </div>`;
   document.getElementById('detail-view').style.display='block';
   document.getElementById('detail-view').scrollTop=0;
@@ -1358,7 +1566,7 @@ function startUpload(type, fromTab) {
   uploadCtx = {type, fromTab: fromTab || null};
   const titles = { live_photo:'Живое фото байка', portrait:'Фото профиля', contest_bike:'Фото для ТОП Байк', contest_style:'Фото для ТОП Стиль', personal_gallery:'Фото в галерею', gallery_general:'Фото в общую галерею' };
   document.getElementById('choice-title').textContent = titles[type]||'Загрузить фото';
-  document.getElementById('choice-gallery-btn').style.display = ['contest_bike','contest_style','personal_gallery'].includes(type)?'flex':'none';
+  document.getElementById('choice-gallery-btn').style.display = ['contest_bike','contest_style'].includes(type)?'flex':'none';
   document.getElementById('choice-link-btn').style.display = type==='gallery_general'?'flex':'none';
   const note = document.getElementById('choice-upload-note');
   if (note) note.textContent = type==='personal_gallery' ? '⚠️ Фото также появится в общей галерее' : 'Выбрать файл с устройства';
@@ -1439,15 +1647,13 @@ async function savePhoto(url) {
   console.log('savePhoto type:', type, 'url:', url, 'row:', currentUser?.row);
 
   if (type==='gallery_general') {
-    const res = await apiPost({action:'addGalleryPhoto', owner_row_id:currentUser.row, owner_name:currentUser.name, photo_url:url, type:'gallery'});
+    const res = await apiPost({action:'addGalleryPhoto', owner_row_id:currentUser.row, owner_name:(currentUser.data&&currentUser.data['ФИО'])||currentUser.name, photo_url:url, type:'gallery'});
     console.log('addGalleryPhoto result:', JSON.stringify(res));
     toast('Фото добавлено в галерею!'); 
     await loadData(); 
     renderGallery();
   } else if (type==='personal_gallery') {
-    const r1 = await apiPost({action:'addGalleryPhoto', owner_row_id:currentUser.row, owner_name:currentUser.name, photo_url:url, type:'personal'});
-    const r2 = await apiPost({action:'updatePersonalGallery', row:currentUser.row, photo_url:url});
-    console.log('personal gallery results:', JSON.stringify(r1), JSON.stringify(r2));
+    await apiPost({action:'addGalleryPhoto', owner_row_id:currentUser.row, owner_name:(currentUser.data&&currentUser.data['ФИО'])||currentUser.name, photo_url:url, type:'personal'});
     toast('Фото добавлено!'); 
     await loadData();
     const me = participants.find(p => p._row == currentUser.row);
@@ -1481,32 +1687,135 @@ async function savePhoto(url) {
   }
 }
 
-function openGalleryPicker() {
+function openGalleryPickerForFav() {
+  // Открываем галерею-пикер, но при выборе добавляем в избранное
+  openGalleryPicker('fav');
+}
+function openGalleryPicker(mode) {
   if (!gallery.length) { toast('Галерея пуста'); return; }
+  const _favMode = mode === 'fav';
+  const _myRow = currentUser && currentUser.row;
+  const _freshMe = participants.find(p => String(p._row) === String(currentUser&&currentUser.row));
+  const _alreadyFav = gpurls(_freshMe || (currentUser&&currentUser.data) || {});
+  const _selected = new Set();
+  // Текущее фото в конкурсном слоте (для подсветки "уже используется")
+  const _currentContestUrl = !_favMode && uploadCtx ? (
+    uploadCtx.type === 'contest_bike' ? gcb(currentUser.data||{}) :
+    uploadCtx.type === 'contest_style' ? gcs(currentUser.data||{}) : null
+  ) : null;
+
   const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:600;overflow-y:auto;max-width:480px;margin:0 auto;padding:16px 16px 40px';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:600;max-width:480px;margin:0 auto;display:flex;flex-direction:column';
   ov.id = 'gallery-picker-overlay';
-  ov.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;position:sticky;top:0;background:rgba(0,0,0,.97);padding-bottom:10px;z-index:1"><div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);letter-spacing:1px">Выбрать из галереи</div><button id="picker-close-btn" style="background:var(--card);border:1px solid var(--border);color:var(--text);font-size:18px;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px">${gallery.map((ph,idx)=>`<div data-url="${ph.photo_url}" class="gpick-item" style="aspect-ratio:1;overflow:hidden;cursor:pointer;border-radius:4px"><img src="${px(ph.photo_url)}" style="width:100%;height:100%;object-fit:cover" loading="lazy"></div>`).join('')}</div>`;
+
+  const header = `<div style="background:rgba(0,0,0,.97);padding:14px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:space-between">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--gold);letter-spacing:1px">${_favMode?'Добавить в избранное':'Выбрать из галереи'}</div>
+    <button id="picker-close-btn" style="background:var(--card);border:1px solid var(--border);color:var(--text);font-size:18px;width:34px;height:34px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+  </div>`;
+
+  const gridItems = gallery.map((ph,idx) => {
+    const _myUploadsUrls = gallery.filter(g=>String(g.owner_row_id)===String(_myRow)).map(g=>g.photo_url);
+    const isMine = String(ph.owner_row_id) === String(_myRow) || _myUploadsUrls.includes(ph.photo_url);
+    const inFav = _alreadyFav.includes(ph.photo_url);
+    const isCurrent = !_favMode && _currentContestUrl && ph.photo_url === _currentContestUrl;
+    const disabled = _favMode ? (isMine || inFav) : !!isCurrent;
+    const dimStyle = disabled ? 'opacity:0.7;' : 'opacity:1;';
+    const badge = _favMode
+      ? (isMine
+          ? `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.7);color:var(--muted);font-size:9px;font-weight:700;text-align:center;padding:3px;letter-spacing:.3px">МОЁ ФОТО</div>`
+          : inFav
+          ? `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.7);color:var(--gold);font-size:9px;font-weight:700;text-align:center;padding:3px">УЖЕ В ИЗБРАННОМ</div>`
+          : '')
+      : (isCurrent
+          ? `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.75);color:var(--gold);font-size:9px;font-weight:700;text-align:center;padding:3px">УЖЕ ИСПОЛЬЗУЕТСЯ</div>`
+          : '');
+    const checkEl = _favMode && !disabled ? `<div class="gpick-check" data-url="${ph.photo_url}" style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;border:2px solid white;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s"></div>` : '';
+    return `<div data-url="${ph.photo_url}" data-disabled="${disabled}" class="gpick-item" style="position:relative;aspect-ratio:1;overflow:hidden;border-radius:4px;${dimStyle}cursor:${disabled?'default':'pointer'}">
+      <img src="${px(ph.photo_url)}" style="width:100%;height:100%;object-fit:cover" loading="lazy">
+      ${badge}${checkEl}
+    </div>`;
+  }).join('');
+
+  const footer = _favMode
+    ? `<div id="picker-footer" style="padding:12px 16px;border-top:1px solid var(--border);background:rgba(0,0,0,.97);flex-shrink:0">
+        <button id="picker-add-btn" style="width:100%;background:var(--gold);color:var(--black);border:none;border-radius:10px;padding:12px;font-family:'Inter',sans-serif;font-size:14px;font-weight:800;cursor:pointer;opacity:0.5">Добавить выбранные (0)</button>
+      </div>`
+    : '';
+
+  ov.innerHTML = header + `<div style="overflow-y:auto;flex:1;padding:4px"><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px">${gridItems}</div></div>` + footer;
   document.body.appendChild(ov);
-  document.getElementById('picker-close-btn').onclick = () => { document.getElementById('gallery-picker-overlay')?.remove(); };
-  document.querySelectorAll('.gpick-item').forEach(el => {
-    el.addEventListener('click', () => { pickGallery(el.dataset.url, el); });
-  });
+
+  document.getElementById('picker-close-btn').onclick = () => ov.remove();
+
+  if (_favMode) {
+    const addBtn = document.getElementById('picker-add-btn');
+    addBtn.onclick = async () => {
+      if (!_selected.size) return;
+      ov.remove();
+      showLoad(true);
+      // Перечитать свежие данные участника
+      const me = participants.find(p => String(p._row) === String(currentUser.row));
+      const freshData = me || currentUser.data || {};
+      const purls = gpurls(freshData);
+      let added = 0;
+      _selected.forEach(url => { if (!purls.includes(url)) { purls.push(url); added++; } });
+      if (added > 0) {
+        await apiPost({action:'updateParticipant', row:currentUser.row, fields:{gallery_urls:JSON.stringify(purls)}});
+        toast(`Добавлено в избранное: ${added}`);
+        await loadData();
+        if (currentRecord) openDetail(currentRecord._row);
+      } else {
+        toast('Уже всё в избранном');
+      }
+      showLoad(false);
+    };
+  }
+
+  if (_favMode) {
+    ov.querySelectorAll('.gpick-item:not([data-disabled="true"])').forEach(el => {
+      el.addEventListener('click', () => {
+        const url = el.dataset.url;
+        const check = el.querySelector('.gpick-check');
+        if (_selected.has(url)) {
+          _selected.delete(url);
+          check.style.background = 'rgba(0,0,0,.5)';
+          check.style.borderColor = 'white';
+          check.textContent = '';
+          el.style.outline = 'none';
+        } else {
+          _selected.add(url);
+          check.style.background = 'var(--gold)';
+          check.style.borderColor = 'var(--gold)';
+          check.textContent = '✓';
+          el.style.outline = '2px solid var(--gold)';
+        }
+        const btn = document.getElementById('picker-add-btn');
+        btn.textContent = `Добавить выбранные (${_selected.size})`;
+        btn.style.opacity = _selected.size > 0 ? '1' : '0.5';
+      });
+    });
+  } else {
+    ov.querySelectorAll('.gpick-item').forEach(el => {
+      el.addEventListener('click', () => {
+        if (el.dataset.disabled === 'true') return;
+        // Показать спиннер поверх фото
+        el.style.opacity = '0.5';
+        el.style.pointerEvents = 'none';
+        const spin = document.createElement('div');
+        spin.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.4)';
+        spin.innerHTML = '<span class="spinner" style="width:24px;height:24px;border-width:3px"></span>';
+        el.appendChild(spin);
+        pickGallery(el.dataset.url, el, mode);
+      });
+    });
+  }
+
 }
 
-async function pickGallery(url, el) {
+async function pickGallery(url, el, mode) {
   document.getElementById('gallery-picker-overlay')?.remove();
-  showLoad(true);
-  const type=uploadCtx?.type;
-  const fm={contest_bike:'фото СТАЛЬНАЯ КЛАССИКА лучший байк',contest_style:'фото ИКОНА СТИЛЯ лучший образ'};
-  if (type==='personal_gallery') {
-    await apiPost({action:'updatePersonalGallery',row:currentUser.row,photo_url:url});
-    toast('Добавлено в коллекцию!');
-  } else {
-    const field=fm[type]; if (field) { await apiPost({action:'updateParticipant',row:currentUser.row,fields:{[field]:url}}); toast('Фото сохранено!'); }
-  }
-  await loadData(); if (currentRecord) openDetail(currentRecord._row);
-  showLoad(false);
+  if (mode === 'fav') return;
+  await savePhoto(url);
 }
 
 // LIGHTBOX
@@ -1517,13 +1826,51 @@ function openLb(i) {
     if (gallerySortBy==='comments') return getComments(b.photo_url).length-getComments(a.photo_url).length;
     return new Date(b.uploaded_at||0)-new Date(a.uploaded_at||0);
   });
-  lbImages=sorted.map(ph=>({url:ph.photo_url,name:ph.owner_name,sub:'',ownerRow:ph.owner_row_id,galleryRow:ph._row}));
+  lbImages=sorted.map(ph=>({url:ph.photo_url,name:ph.owner_name,sub:'',ownerRow:ph.owner_row_id,galleryRow:ph._row,context:'gallery'}));
   lbIndex=i; showLb();
   document.getElementById('lightbox').classList.add('open');
 }
-function openLbSingle(url,name,sub) {
+function openUploadedPhoto(url, name, galleryRow) {
+  lbImages = [{
+    url, name,
+    sub: 'Мои фото',
+    context: 'uploaded',
+    ownerRow: currentUser && currentUser.row,
+    galleryRow: galleryRow,
+    isOwnUpload: true
+  }];
+  lbIndex = 0;
+  showLb();
+  document.getElementById('lightbox').classList.add('open');
+}
+function openPersonalPhoto(url, name) {
+  const ownGalleryItem = gallery.find(ph => ph.photo_url === url && String(ph.owner_row_id) === String(currentUser&&currentUser.row));
+  // ownerRow = currentUser.row только если фото реально наше
+  const item = {
+    url, name,
+    sub: 'Избранное',
+    context: 'personal',
+    ownerRow: currentUser && currentUser.row,  // нужен для showLb чтобы показать "убрать из избранного"
+    galleryRow: ownGalleryItem ? ownGalleryItem._row : null,
+    isOwnUpload: !!ownGalleryItem
+  };
+  lbImages = [item];
+  lbIndex = 0;
+  showLb();
+  document.getElementById('lightbox').classList.add('open');
+}
+function openPortrait(el) {
+  const url = el.dataset.url;
+  const name = el.dataset.name;
   if (!url) return;
-  lbImages=[{url,name,sub}]; lbIndex=0; showLb();
+  lbImages = [{url, name, sub:'Фото профиля', photoType:'portrait', ownerRow: currentUser&&currentUser.row}];
+  lbIndex = 0;
+  showLb();
+  document.getElementById('lightbox').classList.add('open');
+}
+function openLbSingle(url,name,sub,photoType,context) {
+  if (!url) return;
+  lbImages=[{url,name,sub,photoType,context:context||photoType||'single',ownerRow:photoType?currentUser&&currentUser.row:null}]; lbIndex=0; showLb();
   document.getElementById('lightbox').classList.add('open');
 }
 function showLb() {
@@ -1532,42 +1879,116 @@ function showLb() {
   document.getElementById('lb-img').src=px(item.url);
   document.getElementById('lb-name').textContent=item.name||'';
   document.getElementById('lb-sub').textContent=item.sub||'';
-  document.getElementById('lb-dl').href=item.url;
-  document.getElementById('lb-save').style.display=(currentUser&&!currentUser.isGuest)?'flex':'none';
-  // Show delete for own photos or admin
-  const isOwnPhoto = currentUser&&!currentUser.isGuest && item.ownerRow && String(item.ownerRow)==String(currentUser.row);
-  const canDelete = isAdmin() || isOwnPhoto;
-  document.getElementById('lb-delete').style.display=canDelete?'flex':'none';
+  document.getElementById('lb-delete-confirm').style.display='none';
+  ['lb-save','lb-remove-col','lb-delete','lb-delete-all','lb-update'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.disabled = false;
+  });
+
+  const loggedIn = currentUser && !currentUser.isGuest;
+  const ctx = item.context||'single';
+  const isOwner = loggedIn && item.ownerRow && String(item.ownerRow)==String(currentUser.row);
+  const isOwnContest = loggedIn && item.photoType && ['contest_bike','contest_style','portrait'].includes(item.photoType) && currentRecord && String(currentRecord._row)==String(currentUser.row);
+  const isAdmin_ = isAdmin();
+  const canDelete = isAdmin_ || isOwner || isOwnContest;
+
+  // Скачать
+  const dl = document.getElementById('lb-dl');
+  const showDl = ['gallery','top','personal','uploaded'].includes(ctx);
+  dl.style.display = showDl ? 'flex' : 'none';
+  if (showDl) dl.href = item.url;
+
+  // В избранное — галерея/топ, не своё, ещё не в избранном
+  const alreadyInCollection = loggedIn && currentUser.data && gpurls(currentUser.data).includes(item.url);
+  document.getElementById('lb-save').style.display = (loggedIn && ['gallery','top'].includes(ctx) && !isOwner && !alreadyInCollection) ? 'flex' : 'none';
+
+  // Из избранного — только в контексте personal
+  document.getElementById('lb-remove-col').style.display = (loggedIn && ctx==='personal') ? 'flex' : 'none';
+
+  // Удалить везде — uploaded (своё) или personal (своё загруженное)
+  const isOwnUpload = item.isOwnUpload || (ctx==='personal' && isOwner && item.galleryRow);
+  document.getElementById('lb-delete-all').style.display = (loggedIn && ctx==='personal' && isOwnUpload) ? 'flex' : 'none';
+
+  // Обновить фото — только владелец contest фото
+  const showUpdate = isOwnContest && ['contest_bike','contest_style'].includes(item.photoType||'');
+  const lbUpdate = document.getElementById('lb-update');
+  if (lbUpdate) lbUpdate.style.display = showUpdate ? 'flex' : 'none';
+
+  // Удалить — владелец/админ в галерее, топ, конкурс, портрет, uploaded
+  document.getElementById('lb-delete').style.display = (canDelete && ['gallery','top','uploaded'].includes(ctx)) || (canDelete && ['contest_bike','contest_style','portrait'].includes(item.photoType||'')) ? 'flex' : 'none';
+
   document.querySelector('.lightbox-prev').style.display=lbImages.length>1?'flex':'none';
   document.querySelector('.lightbox-next').style.display=lbImages.length>1?'flex':'none';
+}
+
+function showLbDeleteConfirm(mode) {
+  const texts = {
+    delete: 'Удалить это фото?',
+    deleteAll: 'Удалить фото везде — из галереи и всех коллекций?'
+  };
+  document.getElementById('lb-confirm-text').textContent = texts[mode]||texts.delete;
+  document.getElementById('lb-confirm-ok').onclick = () => lbBtnAction(document.getElementById('lb-confirm-ok'), mode==='deleteAll' ? _doDeleteEverywhere : _doDeleteMyPhoto);
+  document.getElementById('lb-delete-confirm').style.display='block';
 }
 function lbNav(dir) { lbIndex=(lbIndex+dir+lbImages.length)%lbImages.length; showLb(); }
 function closeLightbox() { document.getElementById('lightbox').classList.remove('open'); }
 async function deleteMyPhoto() {
-  if (!lbCurrentPhoto || !currentUser || currentUser.isGuest) return;
-  showConfirm('Удалить это фото? Действие нельзя отменить.', async () => {
-    await _doDeleteMyPhoto();
-  }, 'Удалить фото');
+  showLbDeleteConfirm('delete');
 }
-async function _doDeleteMyPhoto() {
+
+async function _doDeleteEverywhere() {
   if (!lbCurrentPhoto || !currentUser || currentUser.isGuest) return;
   showLoad(true);
   try {
-    // Remove from gallery sheet
+    // Удалить из галереи
     if (lbCurrentPhoto.galleryRow) {
       await apiPost({action:'deleteGalleryPhoto', row:lbCurrentPhoto.galleryRow});
     }
-    // Remove from personal gallery urls if present
+    // Удалить из личной коллекции
     const purls = gpurls(currentUser.data||{});
     const newUrls = purls.filter(u=>u!==lbCurrentPhoto.url);
     if (newUrls.length !== purls.length) {
       await apiPost({action:'updateParticipant', row:currentUser.row, fields:{gallery_urls:JSON.stringify(newUrls)}});
     }
+    toast('Фото удалено везде');
+    closeLightbox();
+    await loadData(); renderAll();
+    if (_currentTab === 3) { /* остаёмся в галерее */ }
+    else if (currentRecord) openDetail(currentRecord._row);
+  } catch(e) { toast('Ошибка удаления'); }
+  showLoad(false);
+}
+async function _doDeleteMyPhoto() {
+  if (!lbCurrentPhoto || !currentUser || currentUser.isGuest) return;
+  showLoad(true);
+  try {
+    if (lbCurrentPhoto.photoType === 'portrait') {
+      await apiPost({action:'updateParticipant', row:currentUser.row, fields:{portrait_photo:''}});
+    } else if (lbCurrentPhoto.photoType === 'contest_bike') {
+      await apiPost({action:'updateParticipant', row:currentUser.row, fields:{'фото СТАЛЬНАЯ КЛАССИКА лучший байк':'','contest_bike':''}});
+    } else if (lbCurrentPhoto.photoType === 'contest_style') {
+      await apiPost({action:'updateParticipant', row:currentUser.row, fields:{'фото ИКОНА СТИЛЯ лучший образ':'','contest_style':''}});
+    } else if (lbCurrentPhoto.galleryRow) {
+      await apiPost({action:'deleteGalleryPhoto', row:lbCurrentPhoto.galleryRow});
+      // Также удаляем из личной коллекции если там есть
+      const purls = gpurls(currentUser.data||{});
+      const newUrls = purls.filter(u=>u!==lbCurrentPhoto.url);
+      if (newUrls.length !== purls.length) {
+        await apiPost({action:'updateParticipant', row:currentUser.row, fields:{gallery_urls:JSON.stringify(newUrls)}});
+      }
+    } else {
+      const purls = gpurls(currentUser.data||{});
+      const newUrls = purls.filter(u=>u!==lbCurrentPhoto.url);
+      if (newUrls.length !== purls.length) {
+        await apiPost({action:'updateParticipant', row:currentUser.row, fields:{gallery_urls:JSON.stringify(newUrls)}});
+      }
+    }
     toast('Фото удалено');
     closeLightbox();
     await loadData();
     renderAll();
-    if (currentRecord) openDetail(currentRecord._row);
+    if (_currentTab === 3) { /* остаёмся в галерее */ }
+    else if (currentRecord) openDetail(currentRecord._row);
   } catch(e) { toast('Ошибка удаления'); }
   showLoad(false);
 }
@@ -1575,8 +1996,35 @@ async function _doDeleteMyPhoto() {
 async function saveToPersonal() {
   if (!currentUser||currentUser.isGuest||!lbCurrentPhoto) return;
   showLoad(true);
-  await apiPost({action:'updatePersonalGallery',row:currentUser.row,photo_url:lbCurrentPhoto.url});
-  toast('Сохранено в вашу коллекцию!'); await loadData(); showLoad(false);
+  const freshMe = participants.find(p => String(p._row) === String(currentUser.row));
+  const purls = gpurls(freshMe || currentUser.data || {});
+  if (!purls.includes(lbCurrentPhoto.url)) {
+    purls.push(lbCurrentPhoto.url);
+    await apiPost({action:'updateParticipant', row:currentUser.row, fields:{gallery_urls:JSON.stringify(purls)}});
+  }
+  toast('Добавлено в избранное!');
+  await loadData();
+  const me = participants.find(p => String(p._row) === String(currentUser.row));
+  if (me) { currentUser.data = me; localStorage.setItem('dgr_user', JSON.stringify(currentUser)); }
+  showLoad(false);
+}
+
+async function removeFromCollection() {
+  if (!currentUser||currentUser.isGuest||!lbCurrentPhoto) return;
+  showLoad(true);
+  // Берём свежие данные из participants а не из кеша
+  const freshMe = participants.find(p => String(p._row) === String(currentUser.row));
+  const purls = gpurls(freshMe || currentUser.data || {});
+  const newUrls = purls.filter(u => u !== lbCurrentPhoto.url);
+  await apiPost({action:'updateParticipant', row:currentUser.row, fields:{gallery_urls:JSON.stringify(newUrls)}});
+  toast('Убрано из избранного');
+  closeLightbox();
+  await loadData();
+  const _meAfter = participants.find(p => String(p._row) === String(currentUser.row));
+  if (_meAfter) { currentUser.data = _meAfter; localStorage.setItem('dgr_user', JSON.stringify(currentUser)); }
+  renderAll();
+  if (currentRecord) openDetail(currentRecord._row);
+  showLoad(false);
 }
 
 // TABS
@@ -1596,7 +2044,9 @@ function initNavIcons() {
   }
 }
 function goAbout() { switchTab(4); }
+let _currentTab = 0;
 function switchTab(i) {
+  _currentTab = i;
   if (i===4) renderEvent();
   document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',i===j));
   document.querySelectorAll('.view').forEach((v,j)=>v.classList.toggle('active',i===j));
@@ -1628,14 +2078,23 @@ function openEmailModal() {
 
 async function saveEmail() {
   const email = document.getElementById('email-input').value.trim();
-  if (!email || !email.includes('@')) { document.getElementById('email-err').style.display='block'; return; }
+  const errEl = document.getElementById('email-err');
+  if (!email || !email.includes('@')) { errEl.textContent='Введите корректный email'; errEl.style.display='block'; return; }
+  // Проверить не занят ли email другим участником
+  const conflict = participants.find(p => p['email'] && p['email'].toLowerCase()===email.toLowerCase() && String(p._row)!==String(currentUser.row));
+  if (conflict) { errEl.textContent=`Этот email уже привязан к участнику ${conflict['ФИО']||''}`; errEl.style.display='block'; return; }
   showLoad(true);
   const res = await apiPost({action:'updateParticipant', row:currentUser.row, fields:{email}});
   if (res.error) { toast('Ошибка сохранения'); showLoad(false); return; }
+  // Обновить currentUser.data сразу
+  if (currentUser.data) currentUser.data['email'] = email;
+  localStorage.setItem('dgr_user', JSON.stringify(currentUser));
   toast('Email сохранён! Теперь можно входить по email.');
   document.getElementById('email-modal').classList.remove('open');
   await loadData();
-  if (currentRecord) openDetail(currentRecord._row);
+  const me = participants.find(p => String(p._row)===String(currentUser.row));
+  if (me) { currentUser.data = me; localStorage.setItem('dgr_user', JSON.stringify(currentUser)); }
+  if (currentRecord) { currentRecord = participants.find(p=>String(p._row)===String(currentRecord._row))||currentRecord; openDetail(currentRecord._row); }
   showLoad(false);
 }
 
@@ -1654,7 +2113,7 @@ async function loginWithCode() {
     const adminKey = Object.keys(d.participant).find(k => k.toLowerCase().includes('admin'));
     const isAdminUser = adminKey ? (d.participant[adminKey] && d.participant[adminKey]!=='0' && String(d.participant[adminKey]).toUpperCase()!=='FALSE') : false;
     if (adminKey) console.log('admin field:', adminKey, '=', d.participant[adminKey], '→ isAdmin:', isAdminUser);
-    currentUser = { name: isAdminUser ? 'Администратор' : d.participant['ФИО'], row: d.participant._row, isGuest: false, isAdmin: isAdminUser, data: d.participant };
+    currentUser = { name: d.participant['ФИО'] || 'Администратор', row: d.participant._row, isGuest: false, isAdmin: isAdminUser, data: d.participant };
     localStorage.setItem('dgr_user', JSON.stringify(currentUser));
     await loadData(); showApp();
   } catch(e) { toast('Ошибка соединения. Проверьте интернет.'); }
@@ -1714,6 +2173,18 @@ async function adminSaveEdit() {
   await loadData(); renderAll(); showLoad(false);
 }
 
+async function deleteContestPhoto(type) {
+  const fm = { contest_bike:'contest_bike', contest_style:'contest_style' };
+  const sheetFm = { contest_bike:'фото СТАЛЬНАЯ КЛАССИКА лучший байк', contest_style:'фото ИКОНА СТИЛЯ лучший образ' };
+  if (!currentUser || currentUser.isGuest) return;
+  showLoad(true);
+  await apiPost({action:'updateParticipant', row:currentUser.row, fields:{[sheetFm[type]]:'', [fm[type]]:''}});
+  toast('Фото удалено');
+  await loadData();
+  renderAll();
+  if (currentRecord) openDetail(currentRecord._row);
+  showLoad(false);
+}
 async function adminDeletePhoto(type) {
   const fm = { contest_bike:'фото СТАЛЬНАЯ КЛАССИКА лучший байк', contest_style:'фото ИКОНА СТИЛЯ лучший образ', live:'ЖИВОЕ ФОТО БАЙКА' };
   showLoad(true);
@@ -1858,6 +2329,26 @@ function hasLiked(photoUrl) {
   return reactions.some(r => r.photo_url === photoUrl && r.type === 'like' && String(r.user_row) === String(currentUser.row));
 }
 
+function lbUpdateContestPhoto() {
+  if (!lbCurrentPhoto || !lbCurrentPhoto.photoType) return;
+  closeLightbox();
+  startUpload(lbCurrentPhoto.photoType);
+}
+function lbBtnAction(btn, fn) {
+  const prev = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:13px;height:13px;border-width:2px;display:inline-block;vertical-align:middle"></span>';
+  Promise.resolve(fn()).finally(() => {
+    btn.disabled = false;
+    btn.innerHTML = prev;
+  });
+}
+function lbtnClick(btn, photoUrl, ownerRow, isTop) {
+  const prev = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:13px;height:13px;border-width:2px;display:inline-block;vertical-align:middle"></span>';
+  toggleLike(photoUrl, ownerRow, btn, isTop).finally(() => { btn.disabled = false; });
+}
 async function toggleLike(photoUrl, ownerRow, btn, isTop=false) {
   if (!currentUser) { openAuthChoice('Войдите чтобы поставить лайк'); return; }
   if (currentUser.isGuest && isTop) { toast('Голосовать в конкурсе могут только участники'); return; }
@@ -1870,6 +2361,8 @@ async function toggleLike(photoUrl, ownerRow, btn, isTop=false) {
   }
   const already = hasLiked(photoUrl);
   btn.disabled = true;
+  const prevHtml = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle"></span>';
   if (already) {
     await apiPost({action:'removeReaction', photo_url:photoUrl, user_row:currentUser.row});
     reactions = reactions.filter(r => !(r.photo_url===photoUrl && r.type==='like' && String(r.user_row)===String(currentUser.row)));
@@ -1895,8 +2388,10 @@ function reactionsBar(photoUrl, ownerRow, isTop=false) {
   const liked = hasLiked(photoUrl);
   const likeIcon = isTop ? (liked ? '🏆❤️' : '🏆🤍') : (liked ? '❤️' : '🤍');
   const likeTitle = isTop ? 'Голос в ТОП' : 'Нравится';
+  const isMyPhoto = currentUser && !currentUser.isGuest && String(ownerRow) === String(currentUser.row);
+  const likeBtn = isMyPhoto ? `<span class="react-btn" style="opacity:0.4;cursor:default" title="Своё фото">${likeIcon} ${likes}</span>` : `<button class="react-btn ${liked?'liked':''}" onclick="lbtnClick(this,'${photoUrl}',${ownerRow},${isTop})" title="${likeTitle}">${likeIcon} ${likes}</button>`;
   return `<div class="reactions-bar">
-    <button class="react-btn ${liked?'liked':''}" onclick="toggleLike('${photoUrl}',${ownerRow},this,${isTop})" title="${likeTitle}">${likeIcon} ${likes}</button>
+    ${likeBtn}
     <button class="react-btn" onclick="openPhotoComments('${photoUrl}',${ownerRow})">💬 ${comments}</button>
   </div>`;
 }
@@ -2276,11 +2771,11 @@ function selectSuggestion(row) {
   openDetail(row);
 }
 
-document.getElementById('lightbox').addEventListener('click',e=>{if(e.target===e.currentTarget)closeLightbox();});
-document.getElementById('auth-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeAuthModal();});
-document.getElementById('upload-choice').addEventListener('click',e=>{if(e.target===e.currentTarget)closeUploadChoice();});
-document.getElementById('logout-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
-document.getElementById('style-picker-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
+document.getElementById('lightbox')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeLightbox();});
+document.getElementById('auth-modal')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeAuthModal();});
+document.getElementById('upload-choice')?.addEventListener('click',e=>{if(e.target===e.currentTarget)closeUploadChoice();});
+document.getElementById('logout-modal')?.addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
+document.getElementById('style-picker-modal')?.addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
 
 // ── INTERNAL CONFIRM DIALOG ──
 let _confirmCallback = null;
@@ -2407,7 +2902,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <input class="field" id="rider-name-input" placeholder="Имя Фамилия">
     <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;margin-top:6px">Название мотоцикла</div>
     <input class="field" id="bike-name-input" placeholder="Например: Triumph Bonneville T100 2022">
-    <button class="modal-btn" onclick="saveBikeInfo()">СОХРАНИТЬ</button>
+    <button class="modal-btn" onclick="lbBtnAction(this,saveBikeInfo)">СОХРАНИТЬ</button>
     <button class="modal-btn ghost" onclick="document.getElementById('bike-edit-modal').classList.remove('open')">Отмена</button>
   </div>
 </div>
@@ -2424,7 +2919,7 @@ document.addEventListener('DOMContentLoaded', () => {
         📷 Загрузить фото с устройства
       </button>
     </div>
-    <button class="modal-btn" onclick="saveFactoryPhoto()">СОХРАНИТЬ ССЫЛКУ</button>
+    <button class="modal-btn" onclick="lbBtnAction(this,saveFactoryPhoto)">СОХРАНИТЬ ССЫЛКУ</button>
     <button class="modal-btn ghost" onclick="document.getElementById('factory-photo-modal').classList.remove('open')">Отмена</button>
   </div>
 </div>
@@ -2535,10 +3030,12 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="modal-title">Войдите для продолжения</div>
     <div class="modal-sub" id="auth-choice-reason" style="margin-bottom:12px"></div>
     <div id="auth-choice-main">
-      <button class="modal-btn" style="background:transparent;border:1.5px solid var(--gold);color:var(--gold)" onclick="authChoiceSelectGuest()">👁 Гость — лайки и комментарии</button>
-      <button class="modal-btn" style="margin-top:8px" onclick="authChoiceSelectParticipant()">🏍 Участник</button>
+      <button class="modal-btn" style="background:transparent;border:1.5px solid var(--gold);color:var(--gold)" onclick="authChoiceSelectGuest()">👁 Гость</button>
+      <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:-4px;margin-bottom:8px">Просмотр, лайки и комментарии</div>
+      <button class="modal-btn" style="margin-top:0" onclick="authChoiceSelectParticipant()">🏍 Участник</button>
       <button class="modal-btn ghost" style="margin-top:8px;font-size:12px" onclick="authChoiceSelectPhotographer()">📷 Фотограф</button>
-      <button class="modal-btn ghost" style="margin-top:8px;font-size:11px;padding:9px;color:var(--muted);border-color:var(--border)" onclick="closeAuthChoice()">Только просмотр</button>
+      <div style="font-size:10px;color:var(--muted);text-align:center;margin-top:-4px;margin-bottom:8px">Загрузка фото в галерею + права гостя</div>
+      <button class="modal-btn ghost" style="margin-top:0;font-size:11px;padding:9px;color:var(--muted);border-color:var(--border)" onclick="closeAuthChoice()">👀 Зритель — только просмотр страниц</button>
     </div>
     <div id="auth-choice-guest-form" style="display:none">
       <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Введите email для гостевого входа</p>
@@ -2563,6 +3060,23 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="modal-sub" id="confirm-text" style="font-size:14px;margin-bottom:20px"></div>
     <button class="modal-btn" id="confirm-ok" style="background:#e53935;margin-bottom:8px">УДАЛИТЬ</button>
     <button class="modal-btn ghost" onclick="closeConfirm()">Отмена</button>
+  </div>
+</div>
+
+<!-- EVENT DETAILS EDIT MODAL -->
+<div class="modal-overlay" id="event-details-modal">
+  <div class="modal-sheet" style="max-height:85vh;overflow-y:auto">
+    <div class="modal-title">О мероприятии</div>
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Дата</div>
+    <input class="field" id="event-date-input" placeholder="май 2026">
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Место</div>
+    <input class="field" id="event-place-input" placeholder="Минск, Беларусь">
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Дресс-код</div>
+    <input class="field" id="event-dresscode-input" placeholder="джентльменский стиль...">
+    <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Цель</div>
+    <textarea class="field" id="event-goal-input" rows="3" style="resize:none"></textarea>
+    <button class="modal-btn" onclick="lbBtnAction(this,saveEventDetails)">СОХРАНИТЬ</button>
+    <button class="modal-btn ghost" onclick="document.getElementById('event-details-modal').classList.remove('open')">Отмена</button>
   </div>
 </div>
 </body>
