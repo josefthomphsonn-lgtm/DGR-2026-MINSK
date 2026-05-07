@@ -852,13 +852,17 @@ async function sendGuestCode() {
   if (!name) { errEl.textContent='Введите ваше имя'; errEl.style.display='block'; return; }
   if (!email || !email.includes('@')) { errEl.textContent='Введите корректный email'; errEl.style.display='block'; return; }
   errEl.style.display='none';
+  // Сначала проверяем — только потом отправляем код
+  const checkBtn = document.getElementById('guest-send-btn');
+  if(checkBtn){checkBtn.disabled=true;checkBtn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle"></span>';}
   try {
-    const res = await apiPost({action:'login', code: email});
-    if (res && res.success && res.participant) {
-      const p = res.participant;
+    const check = await apiPost({action:'login', code: email});
+    if (check && check.success && check.participant) {
+      const p = check.participant;
       const role = p['admin'] ? 'администратор' : 'участник';
-      errEl.textContent = `Этот email уже зарегистрирован как ${role} (${p['ФИО']||''})`;
+      errEl.textContent = `Этот email уже зарегистрирован как ${role}${p['ФИО']?' ('+p['ФИО']+')':''}`;
       errEl.style.display = 'block';
+      if(checkBtn){checkBtn.disabled=false;checkBtn.innerHTML='ПОЛУЧИТЬ КОД';}
       return;
     }
   } catch(e) {}
