@@ -250,7 +250,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
       <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Войдите по email или персональному коду участника</p>
       <input class="field" id="code-input" placeholder="Email или код доступа" type="text" inputmode="email">
       <div class="modal-err" id="code-err">Email или код не найден. Проверьте и попробуйте снова.</div>
-      <button class="modal-btn" onclick="loginWithCode()">ВОЙТИ КАК УЧАСТНИК</button>
+      <button class="modal-btn" onclick="lbBtnAction(this,loginWithCode)">ВОЙТИ КАК УЧАСТНИК</button>
       <div class="divider">или</div>
       <div style="display:flex;gap:10px;margin-bottom:8px">
         <button onclick="showGuestForm()" style="flex:1;border:1px solid var(--border);border-radius:10px;padding:10px 8px;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;font-family:'Inter',sans-serif">
@@ -270,12 +270,27 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
     </div>
     <div class="modal-section" id="auth-guest" style="display:none">
       <div id="auth-guest-step1">
-        <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Введите имя и email — получите код подтверждения</p>
-        <input class="field" id="guest-name" placeholder="Ваше имя (видно в комментариях)" type="text">
-        <input class="field" id="guest-email" placeholder="Ваш email" type="email" inputmode="email">
-        <div class="modal-err" id="guest-err">Введите корректный email</div>
-        <button class="modal-btn" id="guest-send-btn" onclick="sendGuestCode()">ПОЛУЧИТЬ КОД</button>
-        <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="hideGuestForm()">← Назад</button>
+        <!-- Режим: новый / повторный -->
+        <div id="guest-mode-new">
+          <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Введите имя и email — получите код подтверждения</p>
+          <input class="field" id="guest-name" placeholder="Ваше имя (видно в комментариях)" type="text">
+          <input class="field" id="guest-email" placeholder="Ваш email" type="email" inputmode="email" oninput="checkGuestEmailKnown(this.value)">
+          <div class="modal-err" id="guest-err">Введите корректный email</div>
+          <button class="modal-btn" id="guest-send-btn" onclick="lbBtnAction(this,sendGuestCode)">ПОЛУЧИТЬ КОД</button>
+          <div style="text-align:center;margin-top:8px">
+            <span style="font-size:11px;color:var(--muted)">Уже регистрировались? </span>
+            <button onclick="switchGuestMode('returning')" style="background:none;border:none;color:var(--gold);font-size:11px;font-weight:700;cursor:pointer;padding:0">Войти по email →</button>
+          </div>
+          <button class="modal-btn ghost" style="font-size:11px;padding:9px;margin-top:6px" onclick="hideGuestForm()">← Назад</button>
+        </div>
+        <!-- Режим: повторный вход -->
+        <div id="guest-mode-returning" style="display:none">
+          <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Введите ваш email — пришлём код для входа</p>
+          <input class="field" id="guest-email-ret" placeholder="Ваш email" type="email" inputmode="email">
+          <div class="modal-err" id="guest-err-ret">Введите корректный email</div>
+          <button class="modal-btn" id="guest-send-ret-btn" onclick="lbBtnAction(this,sendGuestCodeReturning)">ПОЛУЧИТЬ КОД</button>
+          <button class="modal-btn ghost" style="font-size:11px;padding:9px;margin-top:4px" onclick="switchGuestMode('new')">← Назад</button>
+        </div>
       </div>
       <div id="auth-guest-step2" style="display:none">
         <p style="font-size:12px;color:var(--muted);margin-bottom:6px;text-align:center">Код отправлен на <span id="guest-email-show" style="color:var(--gold)"></span></p>
@@ -299,7 +314,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
         <input class="field" id="photo-reg-name" placeholder="Имя / псевдоним" type="text">
         <input class="field" id="photo-reg-email" placeholder="Email для уведомления" type="email">
         <textarea class="field" id="photo-reg-motive" placeholder="Кто вы и почему хотите снимать для DGR?" style="height:80px;resize:none;font-family:'Inter',sans-serif;font-size:13px"></textarea>
-        <button class="modal-btn" style="background:var(--gold);color:var(--black)" onclick="submitPhotographerRequest()">ОТПРАВИТЬ ЗАЯВКУ</button>
+        <button class="modal-btn" style="background:var(--gold);color:var(--black)" onclick="lbBtnAction(this,submitPhotographerRequest)">ОТПРАВИТЬ ЗАЯВКУ</button>
         <button class="modal-btn ghost" style="font-size:11px;padding:9px;margin-top:4px" onclick="showPhotoChoice()">← Назад</button>
       </div>
       <!-- Approved login form -->
@@ -307,7 +322,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
         <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Введите email, который был одобрен администратором</p>
         <input class="field" id="photo-login-email" placeholder="Email фотографа" type="email">
         <div class="modal-err" id="photo-login-err">Email не найден в списке одобренных</div>
-        <button class="modal-btn" style="background:var(--gold);color:var(--black)" onclick="loginAsApprovedPhotographer()">ВОЙТИ</button>
+        <button class="modal-btn" style="background:var(--gold);color:var(--black)" onclick="lbBtnAction(this,loginAsApprovedPhotographer)">ВОЙТИ</button>
         <button class="modal-btn ghost" style="font-size:11px;padding:9px;margin-top:4px" onclick="showPhotoChoice()">← Назад</button>
       </div>
     </div>
@@ -341,7 +356,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
     <div class="modal-sub" id="auth-modal-reason">Для этого действия нужно войти</div>
     <input class="field" id="modal-code" placeholder="Email или код доступа" inputmode="email">
     <div class="modal-err" id="modal-err">Email или код не найден</div>
-    <button class="modal-btn" onclick="modalLogin()">ВОЙТИ КАК УЧАСТНИК</button>
+    <button class="modal-btn" onclick="lbBtnAction(this,modalLogin)">ВОЙТИ КАК УЧАСТНИК</button>
     <div class="divider">или</div>
     <div id="modal-guest-toggle" style="margin-bottom:4px">
       <button class="modal-btn ghost" style="font-size:12px;width:100%" onclick="document.getElementById('modal-guest-form').style.display='block';document.getElementById('modal-guest-toggle').style.display='none'">👁 Войти как гость</button>
@@ -350,7 +365,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
     <div id="modal-guest-form" style="display:none">
       <input class="field" id="modal-guest-email" placeholder="Ваш email" type="email" inputmode="email" style="margin-top:0">
       <div class="modal-err" id="modal-guest-err">Введите корректный email</div>
-      <button class="modal-btn ghost" style="border-color:var(--gold);color:var(--gold)" onclick="modalLoginAsGuest()">ВОЙТИ КАК ГОСТЬ</button>
+      <button class="modal-btn ghost" style="border-color:var(--gold);color:var(--gold)" onclick="lbBtnAction(this,modalLoginAsGuest)">ВОЙТИ КАК ГОСТЬ</button>
       <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="document.getElementById('modal-guest-form').style.display='none';document.getElementById('modal-guest-toggle').style.display='block'">← Назад</button>
     </div>
     <div id="modal-photo-toggle">
@@ -359,7 +374,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
     </div>
     <div id="modal-photographer-form" style="display:none">
       <input class="field" id="modal-photographer-name" placeholder="Ваше имя / псевдоним" style="margin-top:0">
-      <button class="modal-btn" style="background:var(--gold);color:var(--black)" onclick="modalLoginAsPhotographer()">ПРОДОЛЖИТЬ КАК ФОТОГРАФ</button>
+      <button class="modal-btn" style="background:var(--gold);color:var(--black)" onclick="lbBtnAction(this,modalLoginAsPhotographer)">ПРОДОЛЖИТЬ КАК ФОТОГРАФ</button>
       <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="document.getElementById('modal-photographer-form').style.display='none';document.getElementById('modal-photo-toggle').style.display='block'">← Назад</button>
     </div>
     <button class="modal-btn ghost" onclick="closeAuthModal()" style="margin-top:4px">Отмена</button>
@@ -417,7 +432,7 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
       </label>
     </div>
     <div class="modal-err" id="photo-link-err">Некорректная ссылка</div>
-    <button class="modal-btn" onclick="submitPhotoLink()">ДОБАВИТЬ</button>
+    <button class="modal-btn" onclick="lbBtnAction(this,submitPhotoLink)">ДОБАВИТЬ</button>
     <button class="modal-btn ghost" onclick="document.getElementById('photo-link-modal').classList.remove('open')">Отмена</button>
   </div>
 </div>
@@ -845,6 +860,73 @@ function emailRegisteredMsg(info) {
   const labels = { participant: 'участник', guest: 'гость', photographer: 'фотограф' };
   return `Этот email уже зарегистрирован как ${labels[info.role] || info.role}${info.name ? ' (' + info.name + ')' : ''}`;
 }
+function switchGuestMode(mode) {
+  document.getElementById('guest-mode-new').style.display = mode==='new' ? 'block' : 'none';
+  document.getElementById('guest-mode-returning').style.display = mode==='returning' ? 'block' : 'none';
+  document.getElementById('auth-guest-step2').style.display = 'none';
+  document.getElementById('auth-guest-step1').style.display = 'block';
+}
+
+async function sendGuestCodeReturning() {
+  const email = document.getElementById('guest-email-ret').value.trim();
+  const errEl = document.getElementById('guest-err-ret');
+  if (!email || !email.includes('@')) { errEl.textContent='Введите корректный email'; errEl.style.display='block'; return; }
+  errEl.style.display='none';
+  // Проверить не участник ли
+  try {
+    const check = await api({action:'login', code: email});
+    if (check && check.success && check.participant) {
+      const p = check.participant;
+      const role = p['admin'] ? 'администратор' : 'участник';
+      errEl.textContent = `Этот email зарегистрирован как ${role}${p['ФИО']?' ('+p['ФИО']+')':''}`;
+      errEl.style.display='block'; return;
+    }
+  } catch(e) {}
+  // Если знакомый email — войти без кода
+  const verified = JSON.parse(localStorage.getItem('dgr_verified_emails')||'{}');
+  const prev = verified[email.toLowerCase()];
+  if (prev) {
+    currentUser = { name: prev.name, email, row:0, isGuest:true, data:null };
+    localStorage.setItem('dgr_user', JSON.stringify(currentUser));
+    loadData().then(showApp);
+    return;
+  }
+  // Иначе отправить код
+  const btn = document.getElementById('guest-send-ret-btn');
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle"></span>';}
+  try {
+    const res = await apiPost({action:'sendVerificationCode', email});
+    if(res&&res.error){errEl.textContent=res.error;errEl.style.display='block';if(btn){btn.disabled=false;btn.innerHTML='ПОЛУЧИТЬ КОД';}return;}
+    // Показать шаг с кодом — но для returning нет поля имени, берём из verified или email
+    document.getElementById('guest-name').value = prev?.name || email.split('@')[0];
+    document.getElementById('guest-email').value = email;
+    const showEl = document.getElementById('guest-email-show');
+    if(showEl) showEl.textContent = email;
+    document.getElementById('auth-guest-step1').style.display='none';
+    document.getElementById('auth-guest-step2').style.display='block';
+    const codeEl=document.getElementById('guest-code'); if(codeEl)codeEl.value='';
+    document.getElementById('guest-code-err').style.display='none';
+  } catch(e){errEl.textContent='Ошибка отправки.';errEl.style.display='block';}
+  if(btn){btn.disabled=false;btn.innerHTML='ПОЛУЧИТЬ КОД';}
+}
+function checkGuestEmailKnown(email) {
+  if (!email || !email.includes('@')) return;
+  const verified = JSON.parse(localStorage.getItem('dgr_verified_emails')||'{}');
+  const prev = verified[email.toLowerCase()];
+  const nameField = document.getElementById('guest-name');
+  const hint = document.getElementById('guest-step1-hint');
+  const btn = document.getElementById('guest-send-btn');
+  if (prev) {
+    nameField.style.display = 'none';
+    nameField.value = prev.name || '';
+    if(hint) hint.textContent = `С возвращением, ${prev.name||''}! Нажмите войти.`;
+    if(btn) btn.textContent = 'ВОЙТИ';
+  } else {
+    nameField.style.display = 'block';
+    if(hint) hint.textContent = 'Введите имя и email — получите код подтверждения';
+    if(btn) btn.textContent = 'ПОЛУЧИТЬ КОД';
+  }
+}
 async function sendGuestCode() {
   const name = (document.getElementById('guest-name')||{}).value?.trim()||'';
   const email = (document.getElementById('guest-email')||{}).value?.trim()||'';
@@ -852,11 +934,21 @@ async function sendGuestCode() {
   if (!name) { errEl.textContent='Введите ваше имя'; errEl.style.display='block'; return; }
   if (!email || !email.includes('@')) { errEl.textContent='Введите корректный email'; errEl.style.display='block'; return; }
   errEl.style.display='none';
+  // Если email уже верифицирован ранее — сразу входим без кода
+  const verified = JSON.parse(localStorage.getItem('dgr_verified_emails')||'{}');
+  const prev = verified[email.toLowerCase()];
+  if (prev) {
+    const guestName = name || prev.name || email.split('@')[0];
+    currentUser = { name: guestName, email, row:0, isGuest:true, data:null };
+    localStorage.setItem('dgr_user', JSON.stringify(currentUser));
+    loadData().then(showApp);
+    return;
+  }
   // Сначала проверяем — только потом отправляем код
   const checkBtn = document.getElementById('guest-send-btn');
   if(checkBtn){checkBtn.disabled=true;checkBtn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle"></span>';}
   try {
-    const check = await apiPost({action:'login', code: email});
+    const check = await api({action:'login', code: email});
     if (check && check.success && check.participant) {
       const p = check.participant;
       const role = p['admin'] ? 'администратор' : 'участник';
@@ -895,6 +987,10 @@ async function verifyGuestCode() {
     const guestName = (document.getElementById('guest-name')||{}).value?.trim()||email.split('@')[0];
     currentUser = { name: guestName, email, row:0, isGuest:true, data:null };
     localStorage.setItem('dgr_user', JSON.stringify(currentUser));
+    // Сохранить как верифицированный email
+    const verified = JSON.parse(localStorage.getItem('dgr_verified_emails')||'{}');
+    verified[email.toLowerCase()] = { name: guestName, ts: Date.now() };
+    localStorage.setItem('dgr_verified_emails', JSON.stringify(verified));
     loadData().then(showApp);
   } catch(e){errEl.textContent='Ошибка. Попробуйте ещё раз.';errEl.style.display='block';if(btn){btn.disabled=false;btn.innerHTML='ВОЙТИ';}}
 }
@@ -940,6 +1036,18 @@ async function verifyPhotographerCode() {
   } catch(e) { errEl.textContent='Ошибка. Попробуйте ещё раз.'; errEl.style.display='block'; if(btn){btn.disabled=false;btn.innerHTML='ВОЙТИ КАК ФОТОГРАФ';} }
 }
 
+function deleteGuestAccount() {
+  showConfirm('Удалить аккаунт? Для повторного входа потребуется верификация email.', () => {
+    if (currentUser && currentUser.email) {
+      const verified = JSON.parse(localStorage.getItem('dgr_verified_emails')||'{}');
+      delete verified[currentUser.email.toLowerCase()];
+      localStorage.setItem('dgr_verified_emails', JSON.stringify(verified));
+    }
+    localStorage.removeItem('dgr_user');
+    currentUser = null;
+    location.reload();
+  }, 'Удалить аккаунт', 'УДАЛИТЬ');
+}
 function submitGuestLogin() { sendGuestCode(); }
 function enterViewOnly() {
   currentUser = null;
@@ -1048,16 +1156,36 @@ function showPhotoLogin() {
   document.getElementById('auth-photo-login').style.display = 'block';
   document.getElementById('photo-login-err').style.display = 'none';
 }
-function submitPhotographerRequest() {
+async function submitPhotographerRequest() {
   const name = document.getElementById('photo-reg-name').value.trim();
   const email = document.getElementById('photo-reg-email').value.trim();
   const motivation = document.getElementById('photo-reg-motive').value.trim();
   if (!name || !email || !motivation) { toast('Заполните все поля'); return; }
   const requests = JSON.parse(localStorage.getItem('dgr_photographer_requests') || '[]');
   if (requests.find(r => r.email === email)) { toast('Заявка от этого email уже подана'); return; }
+  // Также проверить среди гостей в localStorage
+  const savedUser = JSON.parse(localStorage.getItem('dgr_user')||'null');
+  if (savedUser && savedUser.email && savedUser.email.toLowerCase()===email.toLowerCase()) {
+    const role = savedUser.isGuest ? 'гостем' : savedUser.isPhotographer ? 'фотографом' : 'участником';
+    toast(`Этот email уже используется ${role}`); return;
+  }
+  // Проверить не занят ли email — блокируем кнопку на время проверки
+  const submitBtn = document.querySelector('#auth-photo-register .modal-btn');
+  if(submitBtn){submitBtn.disabled=true;submitBtn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle"></span>';}
+  let emailBlocked = false;
+  try {
+    const check = await api({action:'login', code: email});
+    if (check && check.success && check.participant) {
+      const p = check.participant;
+      const role = p['admin'] ? 'администратор' : 'участник';
+      toast(`Этот email уже используется как ${role}${p['ФИО']?' ('+p['ФИО']+')':''}`);
+      emailBlocked = true;
+    }
+  } catch(e) {}
+  if(submitBtn){submitBtn.disabled=false;submitBtn.innerHTML='ОТПРАВИТЬ ЗАЯВКУ';}
+  if(emailBlocked) return;
   requests.push({ name, email, motivation, date: new Date().toISOString() });
   localStorage.setItem('dgr_photographer_requests', JSON.stringify(requests));
-  // Try API (backend may not support yet)
   apiPost({ action: 'registerPhotographer', name, email, motivation }).catch(() => {});
   document.getElementById('auth-photo-register').innerHTML = `
     <div style="text-align:center;padding:20px 0">
@@ -1068,9 +1196,21 @@ function submitPhotographerRequest() {
     <button class="modal-btn ghost" style="margin-top:16px" onclick="hidePhotographerForm()">Закрыть</button>
   `;
 }
-function loginAsApprovedPhotographer() {
+async function loginAsApprovedPhotographer() {
   const email = document.getElementById('photo-login-email').value.trim().toLowerCase();
+  const errEl = document.getElementById('photo-login-err');
   if (!email) return;
+  // Проверить не занят ли email участником/гостем
+  try {
+    const check = await api({action:'login', code: email});
+    if (check && check.success && check.participant) {
+      const p = check.participant;
+      const role = p['admin'] ? 'администратор' : 'участник';
+      errEl.textContent = `Этот email зарегистрирован как ${role}${p['ФИО']?' ('+p['ФИО']+')':''}`;
+      errEl.style.display = 'block';
+      return;
+    }
+  } catch(e) {}
   const approved = JSON.parse(localStorage.getItem('dgr_approved_photographers') || '[]');
   const rec = approved.find(r => r.email.toLowerCase() === email);
   if (rec) {
@@ -1078,16 +1218,16 @@ function loginAsApprovedPhotographer() {
     localStorage.setItem('dgr_user', JSON.stringify(currentUser));
     loadData().then(showApp);
   } else {
-    // Try API
     apiPost({ action: 'photographerLogin', email }).then(d => {
       if (d && d.name) {
         currentUser = { name: d.name, email, row: 0, isGuest: false, isPhotographer: true, data: null };
         localStorage.setItem('dgr_user', JSON.stringify(currentUser));
         loadData().then(showApp);
       } else {
-        document.getElementById('photo-login-err').style.display = 'block';
+        errEl.textContent = 'Email не найден в списке одобренных';
+        errEl.style.display = 'block';
       }
-    }).catch(() => { document.getElementById('photo-login-err').style.display = 'block'; });
+    }).catch(() => { errEl.textContent = 'Email не найден в списке одобренных'; errEl.style.display = 'block'; });
   }
 }
 function loginAsPhotographer() { showPhotographerForm(); }
@@ -2282,7 +2422,10 @@ function adminApprovePhotographer(i) {
   // Помечаем как одобренного, но не удаляем из списка
   requests[i] = { ...r, approved: true, approvedAt: new Date().toISOString(), read: true };
   localStorage.setItem('dgr_photographer_requests', JSON.stringify(requests));
-  toast(`Одобрено: ${r.name}. Уведомите по email: ${r.email}`);
+  toast(`Одобрено: ${r.name}`);
+  // Отправить письмо об одобрении
+  const siteUrl = window.location.href.replace(/\/[^\/]*$/, '/') || 'https://josefthomphsonn-lgtm.github.io/DGR-2026-MINSK/';
+  apiPost({ action: 'notifyPhotographerApproved', name: r.name, email: r.email, siteUrl }).catch(() => {});
   apiPost({ action: 'approvePhotographer', name: r.name, email: r.email }).catch(() => {});
   renderAdminRequests();
   updateNotifBadge();
@@ -2831,7 +2974,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="modal-sub">Чтобы входить с других устройств без кода — сохраните email. При следующем входе введите email вместо кода.</div>
     <input class="field" id="email-input" placeholder="ваш@email.com" type="email">
     <div class="modal-err" id="email-err">Введите корректный email</div>
-    <button class="modal-btn" onclick="saveEmail()">СОХРАНИТЬ</button>
+    <button class="modal-btn" onclick="lbBtnAction(this,saveEmail)">СОХРАНИТЬ</button>
     <button class="modal-btn ghost" onclick="document.getElementById('email-modal').classList.remove('open')">Отмена</button>
   </div>
 </div>
@@ -2863,7 +3006,7 @@ document.addEventListener('DOMContentLoaded', () => {
   <div class="modal-sheet">
     <div class="modal-title" style="color:#e53935">Удалить фото?</div>
     <div class="modal-sub">Это действие нельзя отменить.</div>
-    <button class="modal-btn" style="background:#e53935" onclick="adminDeleteGalleryConfirmed()">УДАЛИТЬ</button>
+    <button class="modal-btn" style="background:#e53935" onclick="lbBtnAction(this,adminDeleteGalleryConfirmed)">УДАЛИТЬ</button>
     <button class="modal-btn ghost" onclick="document.getElementById('admin-del-gallery-modal').classList.remove('open')">Отмена</button>
   </div>
 </div>
@@ -2873,7 +3016,7 @@ document.addEventListener('DOMContentLoaded', () => {
   <div class="modal-sheet" style="max-height:85vh;overflow-y:auto">
     <div class="modal-title" style="color:#e53935">Редактировать участника</div>
     <div id="admin-edit-body"></div>
-    <button class="modal-btn" style="background:#e53935" onclick="adminSaveEdit()">СОХРАНИТЬ</button>
+    <button class="modal-btn" style="background:#e53935" onclick="lbBtnAction(this,adminSaveEdit)">СОХРАНИТЬ</button>
     <button class="modal-btn ghost" onclick="document.getElementById('admin-edit-modal').classList.remove('open')">Отмена</button>
   </div>
 </div>
@@ -2943,7 +3086,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <div class="modal-title">Характеристики байка</div>
     <div class="modal-sub">Заполните параметры вашего мотоцикла. Поля можно оставить пустыми.</div>
     <div id="specs-edit-body"></div>
-    <button class="modal-btn" onclick="saveBikeSpecs()">СОХРАНИТЬ</button>
+    <button class="modal-btn" onclick="lbBtnAction(this,saveBikeSpecs)">СОХРАНИТЬ</button>
     <button class="modal-btn ghost" onclick="document.getElementById('specs-edit-modal').classList.remove('open')">Отмена</button>
   </div>
 </div>
@@ -2966,7 +3109,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <button id="partner-logo-btn" type="button" onclick="document.getElementById('partner-logo-input').click()" style="background:var(--card);border:1.5px dashed var(--border);color:var(--muted);border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">+ Загрузить логотип</button>
       <img id="partner-logo-preview" src="" alt="" style="display:none;width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid var(--border)">
     </div>
-    <button class="modal-btn" onclick="addPartner()">ДОБАВИТЬ</button>
+    <button class="modal-btn" onclick="lbBtnAction(this,addPartner)">ДОБАВИТЬ</button>
     <button class="modal-btn ghost" onclick="document.getElementById('partner-modal').classList.remove('open')">Отмена</button>
   </div>
 </div>
@@ -2976,7 +3119,7 @@ document.addEventListener('DOMContentLoaded', () => {
   <div class="modal-sheet">
     <div class="modal-title">Описание мероприятия</div>
     <textarea id="about-text-input" class="field" rows="5" style="resize:vertical;height:120px" placeholder="Текст описания..."></textarea>
-    <button class="modal-btn" onclick="saveAboutText()">СОХРАНИТЬ</button>
+    <button class="modal-btn" onclick="lbBtnAction(this,saveAboutText)">СОХРАНИТЬ</button>
     <button class="modal-btn ghost" onclick="document.getElementById('about-text-modal').classList.remove('open')">Отмена</button>
   </div>
 </div>
@@ -2992,7 +3135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     <input class="field" id="pr-contact" placeholder="email@example.com">
     <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Сообщение</div>
     <textarea class="field" id="pr-message" rows="4" style="resize:vertical;height:100px" placeholder="Кратко о сотрудничестве..."></textarea>
-    <button class="modal-btn" onclick="sendPartnerRequest()">ОТПРАВИТЬ</button>
+    <button class="modal-btn" onclick="lbBtnAction(this,sendPartnerRequest)">ОТПРАВИТЬ</button>
     <button class="modal-btn ghost" onclick="document.getElementById('partner-request-modal').classList.remove('open')">Отмена</button>
   </div>
 </div>
@@ -3054,13 +3197,13 @@ document.addEventListener('DOMContentLoaded', () => {
       <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Введите email для гостевого входа</p>
       <input class="field" id="auth-choice-email" placeholder="Ваш email" type="email" inputmode="email">
       <div class="modal-err" id="auth-choice-err">Введите корректный email</div>
-      <button class="modal-btn" style="background:transparent;border:1.5px solid var(--gold);color:var(--gold)" onclick="authChoiceSubmitGuest()">ВОЙТИ КАК ГОСТЬ</button>
+      <button class="modal-btn" style="background:transparent;border:1.5px solid var(--gold);color:var(--gold)" onclick="lbBtnAction(this,authChoiceSubmitGuest)">ВОЙТИ КАК ГОСТЬ</button>
       <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="authChoiceBackToMain()">← Назад</button>
     </div>
     <div id="auth-choice-participant-form" style="display:none">
       <input class="field" id="auth-choice-code" placeholder="Email или код доступа" type="text" inputmode="email">
       <div class="modal-err" id="auth-choice-code-err">Email или код не найден</div>
-      <button class="modal-btn" onclick="authChoiceSubmitParticipant()">ВОЙТИ КАК УЧАСТНИК</button>
+      <button class="modal-btn" onclick="lbBtnAction(this,authChoiceSubmitParticipant)">ВОЙТИ КАК УЧАСТНИК</button>
       <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="authChoiceBackToMain()">← Назад</button>
     </div>
   </div>
