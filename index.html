@@ -269,11 +269,21 @@ body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; back
       <div style="text-align:center;margin-top:12px;font-size:10px;color:var(--border)">Для входа администратора введите код доступа выше</div>
     </div>
     <div class="modal-section" id="auth-guest" style="display:none">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Введите email — сможете ставить лайки и писать комментарии</p>
-      <input class="field" id="guest-email" placeholder="Ваш email" type="email" inputmode="email">
-      <div class="modal-err" id="guest-err">Введите корректный email</div>
-      <button class="modal-btn" onclick="submitGuestLogin()">ВОЙТИ КАК ГОСТЬ</button>
-      <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="hideGuestForm()">← Назад</button>
+      <div id="auth-guest-step1">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Введите имя и email — получите код подтверждения</p>
+        <input class="field" id="guest-name" placeholder="Ваше имя (видно в комментариях)" type="text">
+        <input class="field" id="guest-email" placeholder="Ваш email" type="email" inputmode="email">
+        <div class="modal-err" id="guest-err">Введите корректный email</div>
+        <button class="modal-btn" id="guest-send-btn" onclick="sendGuestCode()">ПОЛУЧИТЬ КОД</button>
+        <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="hideGuestForm()">← Назад</button>
+      </div>
+      <div id="auth-guest-step2" style="display:none">
+        <p style="font-size:12px;color:var(--muted);margin-bottom:6px;text-align:center">Код отправлен на <span id="guest-email-show" style="color:var(--gold)"></span></p>
+        <input class="field" id="guest-code" placeholder="6-значный код" type="text" inputmode="numeric" maxlength="6" style="letter-spacing:6px;font-size:22px;text-align:center">
+        <div class="modal-err" id="guest-code-err">Неверный код</div>
+        <button class="modal-btn" id="guest-verify-btn" onclick="verifyGuestCode()">ВОЙТИ</button>
+        <button class="modal-btn ghost" style="font-size:11px;padding:9px" onclick="document.getElementById('auth-guest-step2').style.display='none';document.getElementById('auth-guest-step1').style.display='block'">← Изменить email</button>
+      </div>
     </div>
     <div class="modal-section" id="auth-photographer" style="display:none">
       <!-- Default: two options -->
@@ -836,13 +846,12 @@ function emailRegisteredMsg(info) {
   return `Этот email уже зарегистрирован как ${labels[info.role] || info.role}${info.name ? ' (' + info.name + ')' : ''}`;
 }
 async function sendGuestCode() {
-  const name = document.getElementById('guest-name').value.trim();
-  const email = document.getElementById('guest-email').value.trim();
+  const name = (document.getElementById('guest-name')||{}).value?.trim()||'';
+  const email = (document.getElementById('guest-email')||{}).value?.trim()||'';
   const errEl = document.getElementById('guest-err');
   if (!name) { errEl.textContent='Введите ваше имя'; errEl.style.display='block'; return; }
   if (!email || !email.includes('@')) { errEl.textContent='Введите корректный email'; errEl.style.display='block'; return; }
   errEl.style.display='none';
-  // Проверить не занят ли email участником
   try {
     const res = await apiPost({action:'login', code: email});
     if (res && res.success && res.participant) {
@@ -853,37 +862,37 @@ async function sendGuestCode() {
       return;
     }
   } catch(e) {}
-  // Отправить код
-  const btn = document.querySelector('#guest-step-email .modal-btn');
-  if(btn) { btn.disabled=true; btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle"></span>'; }
+  const btn = document.getElementById('guest-send-btn');
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle"></span>';}
   try {
     const res = await apiPost({action:'sendVerificationCode', email});
-    if (res && res.error) { errEl.textContent=res.error; errEl.style.display='block'; if(btn){btn.disabled=false;btn.innerHTML='ПОЛУЧИТЬ КОД';} return; }
-    document.getElementById('guest-email-display').textContent = email;
-    document.getElementById('guest-step-email').style.display='none';
-    document.getElementById('guest-step-code').style.display='block';
-    document.getElementById('guest-code').value='';
-    document.getElementById('guest-code-err').style.display='none';
-  } catch(e) { errEl.textContent='Ошибка отправки. Попробуйте ещё раз.'; errEl.style.display='block'; }
+    if(res&&res.error){errEl.textContent=res.error;errEl.style.display='block';if(btn){btn.disabled=false;btn.innerHTML='ПОЛУЧИТЬ КОД';}return;}
+    const showEl = document.getElementById('guest-email-show')||document.getElementById('guest-email-display');
+    if(showEl) showEl.textContent=email;
+    document.getElementById('auth-guest-step1').style.display='none';
+    document.getElementById('auth-guest-step2').style.display='block';
+    const codeEl=document.getElementById('guest-code'); if(codeEl)codeEl.value='';
+    const codeErr=document.getElementById('guest-code-err'); if(codeErr)codeErr.style.display='none';
+  } catch(e){errEl.textContent='Ошибка отправки. Попробуйте ещё раз.';errEl.style.display='block';}
   if(btn){btn.disabled=false;btn.innerHTML='ПОЛУЧИТЬ КОД';}
 }
 
 async function verifyGuestCode() {
-  const email = document.getElementById('guest-email').value.trim();
-  const code = document.getElementById('guest-code').value.trim();
+  const email = (document.getElementById('guest-email')||{}).value?.trim()||'';
+  const code = (document.getElementById('guest-code')||{}).value?.trim()||'';
   const errEl = document.getElementById('guest-code-err');
   if (!code || code.length < 6) { errEl.textContent='Введите 6-значный код'; errEl.style.display='block'; return; }
   errEl.style.display='none';
-  const btn = document.querySelector('#guest-step-code .modal-btn');
-  if(btn) { btn.disabled=true; btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle"></span>'; }
+  const btn = document.getElementById('guest-verify-btn');
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle"></span>';}
   try {
     const res = await apiPost({action:'verifyCode', email, code});
-    if (res && res.error) { errEl.textContent=res.error; errEl.style.display='block'; if(btn){btn.disabled=false;btn.innerHTML='ВОЙТИ';} return; }
-    const guestName = document.getElementById('guest-name').value.trim() || email.split('@')[0];
+    if(res&&res.error){errEl.textContent=res.error;errEl.style.display='block';if(btn){btn.disabled=false;btn.innerHTML='ВОЙТИ';}return;}
+    const guestName = (document.getElementById('guest-name')||{}).value?.trim()||email.split('@')[0];
     currentUser = { name: guestName, email, row:0, isGuest:true, data:null };
     localStorage.setItem('dgr_user', JSON.stringify(currentUser));
     loadData().then(showApp);
-  } catch(e) { errEl.textContent='Ошибка. Попробуйте ещё раз.'; errEl.style.display='block'; if(btn){btn.disabled=false;btn.innerHTML='ВОЙТИ';} }
+  } catch(e){errEl.textContent='Ошибка. Попробуйте ещё раз.';errEl.style.display='block';if(btn){btn.disabled=false;btn.innerHTML='ВОЙТИ';}}
 }
 
 async function sendPhotographerCode() {
@@ -927,7 +936,7 @@ async function verifyPhotographerCode() {
   } catch(e) { errEl.textContent='Ошибка. Попробуйте ещё раз.'; errEl.style.display='block'; if(btn){btn.disabled=false;btn.innerHTML='ВОЙТИ КАК ФОТОГРАФ';} }
 }
 
-async function submitGuestLogin() { sendGuestCode(); }
+function submitGuestLogin() { sendGuestCode(); }
 function enterViewOnly() {
   currentUser = null;
   localStorage.removeItem('dgr_user');
